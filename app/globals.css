@@ -3,8 +3,9 @@
 :root {
   --background: #0d0d0d;
   --foreground: #f8f8f8;
-  --accent-pink: #ff00cc;
-  --accent-cyan: #00ffff;
+  --accent-pink: #ff6b6b;
+  --accent-orange: #ff8c42;
+  --accent-yellow: #ffd93d;
   --accent-purple: #8b5cf6;
 }
 
@@ -24,20 +25,24 @@ body {
 
 /* Neon gradient backgrounds */
 .neon-gradient {
-  background: linear-gradient(90deg, var(--accent-pink), var(--accent-purple), var(--accent-cyan));
+  background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange), var(--accent-yellow));
 }
 
 .neon-gradient-vertical {
-  background: linear-gradient(180deg, var(--accent-pink), var(--accent-purple), var(--accent-cyan));
+  background: linear-gradient(180deg, var(--accent-pink), var(--accent-orange), var(--accent-yellow));
 }
 
 /* Glow effects */
 .glow-pink {
-  box-shadow: 0 0 20px rgba(255, 0, 204, 0.3);
+  box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
 }
 
-.glow-cyan {
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+.glow-orange {
+  box-shadow: 0 0 20px rgba(255, 140, 66, 0.3);
+}
+
+.glow-yellow {
+  box-shadow: 0 0 20px rgba(255, 217, 61, 0.3);
 }
 
 .glow-purple {
@@ -46,7 +51,7 @@ body {
 
 /* Hover animations */
 .hover-glow:hover {
-  box-shadow: 0 0 30px rgba(255, 0, 204, 0.5);
+  box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
   transition: box-shadow 0.3s ease-in-out;
 }
 
@@ -82,7 +87,7 @@ body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(90deg, var(--accent-pink), var(--accent-purple), var(--accent-cyan));
+  background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange), var(--accent-yellow));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -95,12 +100,12 @@ body {
 
 .card-hover:hover {
   transform: translateY(-5px) rotate(1deg);
-  box-shadow: 0 10px 30px rgba(255, 0, 204, 0.2);
+  box-shadow: 0 10px 30px rgba(255, 107, 107, 0.2);
 }
 
 /* Button styles */
 .btn-primary {
-  background: linear-gradient(90deg, var(--accent-pink), var(--accent-cyan));
+  background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange));
   border: none;
   color: white;
   padding: 12px 24px;
@@ -113,7 +118,7 @@ body {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(255, 0, 204, 0.4);
+  box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
 }
 
 .btn-primary::before {
@@ -144,5 +149,5 @@ body {
 .btn-secondary:hover {
   background: var(--accent-pink);
   color: white;
-  box-shadow: 0 0 20px rgba(255, 0, 204, 0.3);
+  box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
 }

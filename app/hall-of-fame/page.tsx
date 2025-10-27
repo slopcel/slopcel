@@ -19,7 +19,7 @@ export default function HallOfFame() {
       {/* Hero Section */}
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-6xl font-bold mb-6 gradient-text">
+          <h1 className="text-6xl font-bold mb-6 text-white">
             🏆 Hall of Fame
           </h1>
           <p className="text-xl text-gray-300 mb-4">
@@ -41,7 +41,7 @@ export default function HallOfFame() {
                 🥇 #1
               </div>
               <div className="flex items-center gap-8 mt-4">
-                <div className="w-32 h-32 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg glow-pink"></div>
+                <div className="w-32 h-32 bg-gradient-to-br from-[#ffd93d] to-[#ff8c42] rounded-lg glow-pink"></div>
                 <div className="flex-1">
                   <h3 className="text-3xl font-bold mb-2">The Ultimate Slop Generator</h3>
                   <p className="text-gray-400 mb-4">
@@ -67,7 +67,7 @@ export default function HallOfFame() {
                 🥈 #2
               </div>
               <div className="flex items-center gap-8 mt-4">
-                <div className="w-32 h-32 bg-gradient-to-br from-gray-400 to-gray-600 rounded-lg glow-cyan"></div>
+                <div className="w-32 h-32 bg-gradient-to-br from-[#ff8c42] to-[#ff6b6b] rounded-lg glow-orange"></div>
                 <div className="flex-1">
                   <h3 className="text-3xl font-bold mb-2">Error Message Poetry</h3>
                   <p className="text-gray-400 mb-4">
@@ -94,7 +94,7 @@ export default function HallOfFame() {
                 🥉 #3
               </div>
               <div className="flex items-center gap-8 mt-4">
-                <div className="w-32 h-32 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg glow-purple"></div>
+                <div className="w-32 h-32 bg-gradient-to-br from-[#ff6b6b] to-[#ffd93d] rounded-lg glow-yellow"></div>
                 <div className="flex-1">
                   <h3 className="text-3xl font-bold mb-2">Loading Screen Simulator</h3>
                   <p className="text-gray-400 mb-4">
@@ -117,7 +117,7 @@ export default function HallOfFame() {
 
             {/* Honorable Mentions */}
             <div className="mt-16">
-              <h2 className="text-3xl font-bold text-center mb-8 gradient-text">
+              <h2 className="text-3xl font-bold text-center mb-8 text-white">
                 Honorable Mentions
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
