@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { Menu, X, BadgeDollarSign, Award, MessageCircle, Twitter as TwitterIcon } from 'lucide-react';
 
 export default function Home() {
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function Home() {
   }, []);
 
   const [pinned, setPinned] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setPinned(window.scrollY > 40);
@@ -56,7 +58,7 @@ export default function Home() {
           </div>
           <div className="text-xl md:text-2xl font-bold text-white">Slopcel</div>
         </div>
-        <div className="flex items-center gap-5">
+        <div className="hidden md:flex items-center gap-5">
           {pinned ? (
             <>
               <a href="#pricing" aria-label="Pricing" className="text-gray-300 hover:text-white transition-colors">
@@ -81,7 +83,39 @@ export default function Home() {
             </>
           )}
         </div>
+        {/* Mobile menu button */}
+        <button
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          className="md:hidden text-gray-300 hover:text-white"
+          onClick={() => setMenuOpen(v => !v)}
+        >
+          {menuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </nav>
+
+      {/* Mobile dropdown menu */}
+      {menuOpen && (
+        <div className="fixed left-1/2 -translate-x-1/2 z-40 mt-2 w-[94%] max-w-[640px]" style={{ top: pinned ? 72 : 88 }}>
+          <div className="rounded-2xl border border-white/10 bg-black/80 backdrop-blur-lg p-2 shadow-2xl">
+            <a href="#pricing" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
+              <BadgeDollarSign size={18} className="text-gray-300" />
+              <span>Pricing</span>
+            </a>
+            <a href="/hall-of-fame" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
+              <Award size={18} className="text-gray-300" />
+              <span>Hall of Fame</span>
+            </a>
+            <a href="https://discord.com/" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
+              <MessageCircle size={18} className="text-gray-300" />
+              <span>Discord</span>
+            </a>
+            <a href="https://x.com/_madiou" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
+              <TwitterIcon size={18} className="text-gray-300" />
+              <span>Twitter</span>
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center px-6">
@@ -92,7 +126,7 @@ export default function Home() {
         
         <div className="text-center max-w-4xl mx-auto relative z-10">
           <h1 className="text-5xl md:text-8xl font-bold mb-6 text-white">
-            Deploy your slop in seconds.
+           Vercel for Vibecoded Projects
           </h1>
           <p className="text-lg md:text-2xl mb-10 text-gray-300 max-w-2xl mx-auto">
             Slopcel is the world's worst hosting platform. Built by AI, for AI — and possibly for you.
@@ -132,20 +166,16 @@ export default function Home() {
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Hey, it's Madiou <span role="img" aria-label="waving hand">👋</span></h2>
               <p className="text-gray-300 leading-relaxed mb-6">
-                In 2018, I believed I was Mark Zuckerberg, built a startup for 1 year, and got 0 users...
+                  I hate AI vibecoded slop and I hate Vercel. However I cannot deny how powerful vibecoding is so I decided to kill 2 birds with one stone by building my own hosting platform.             
               </p>
               <p className="text-gray-300 leading-relaxed mb-6">
-                A few years after my burnout, I restarted the journey differently: I shipped fast —
-                <span className="underline decoration-gray-600 underline-offset-4"> 16 startups in 2 years</span>. Now I'm happy and
-                building products.
-              </p>
-              <p className="text-gray-300 leading-relaxed mb-6">
-                I realized I was doing the same thing over and over: set up DNS records, listen to Stripe webhooks, design pricing section... So I built Slopcel for 3 reasons:
+                You might have already caught on that Slopcel is a parody of Vercel and is a mix of Slop and Vercel. Despite the hilarious name and the unserious presentation of this websitem, I do want to try my hand at vibecoding.
+                This is where you come in. Unlike Vercel, where anyone can deploy their project, this website is solely dedicated to my vibecoded slop. However, you can submit your own ideas and they will be deployed by me. Here is how it works:
               </p>
               <ol className="list-decimal pl-6 space-y-3 text-gray-200 mb-8">
-                <li><span className="font-semibold">Save time</span> and focus on what matters: building a business</li>
-                <li><span className="font-semibold">Avoid headaches</span> like emails ending in spam or handling Stripe subscriptions</li>
-                <li><span className="font-semibold">Get profitable fast</span>—the more you ship, the more you learn, the more you earn</li>
+                <li><span className="font-semibold">Submit an idea</span> by either paying a fee or by reaching out to me on my Twitter posts</li>
+                <li><span className="font-semibold">I will build and deploy it</span> if I like the idea or if there is enough popular demand</li>
+                <li><span className="font-semibold">For those who pay premium</span>—your project will appear on the hall of fame</li>
               </ol>
 
               <p className="text-gray-300">

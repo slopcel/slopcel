@@ -35,8 +35,8 @@ body {
     radial-gradient(600px 380px at 25% 25%, color-mix(in oklab, var(--accent-orange) 85%, black) 0%, transparent 60%),
     radial-gradient(700px 420px at 70% 40%, color-mix(in oklab, var(--accent-blue) 85%, black) 0%, transparent 65%),
     radial-gradient(600px 380px at 55% 75%, color-mix(in oklab, var(--accent-purple) 85%, black) 0%, transparent 65%);
-  filter: blur(90px) saturate(120%);
-  opacity: 0.35;
+  filter: blur(80px) saturate(135%);
+  opacity: 0.45;
   mix-blend-mode: screen;
   pointer-events: none;
 }
@@ -46,8 +46,8 @@ body {
     width: 100vw;
     height: 45vh;
     top: 0;
-    filter: blur(70px) saturate(120%);
-    opacity: 0.32;
+    filter: blur(65px) saturate(135%);
+    opacity: 0.4;
     transform: none;
   }
 }

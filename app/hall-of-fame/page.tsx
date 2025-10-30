@@ -2,9 +2,11 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { Menu, X, BadgeDollarSign, Award as AwardIcon, MessageCircle, Twitter as TwitterIcon } from 'lucide-react';
 
 export default function HallOfFame() {
   const [pinned, setPinned] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     const onScroll = () => setPinned(window.scrollY > 40);
     onScroll();
@@ -27,7 +29,7 @@ export default function HallOfFame() {
           </span>
           <span className="text-xl md:text-2xl font-bold text-white">Slopcel</span>
         </a>
-        <div className="flex items-center gap-5">
+        <div className="hidden md:flex items-center gap-5">
           {pinned ? (
             <>
               <a href="/#pricing" aria-label="Pricing" className="text-gray-300 hover:text-white transition-colors">
@@ -52,7 +54,36 @@ export default function HallOfFame() {
             </>
           )}
         </div>
+        {/* Mobile menu button */}
+        <button aria-label={menuOpen ? 'Close menu' : 'Open menu'} className="md:hidden text-gray-300 hover:text-white" onClick={() => setMenuOpen(v => !v)}>
+          {menuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </nav>
+
+      {/* Mobile dropdown menu */}
+      {menuOpen && (
+        <div className="fixed left-1/2 -translate-x-1/2 z-40 mt-2 w-[94%] max-w-[640px]" style={{ top: pinned ? 72 : 88 }}>
+          <div className="rounded-2xl border border-white/10 bg-black/80 backdrop-blur-lg p-2 shadow-2xl">
+            <a href="/#pricing" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
+              <BadgeDollarSign size={18} className="text-gray-300" />
+              <span>Pricing</span>
+            </a>
+            <a href="/hall-of-fame" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
+              <AwardIcon size={18} className="text-gray-300" />
+              <span>Hall of Fame</span>
+            </a>
+            <a href="https://discord.com/" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
+              <MessageCircle size={18} className="text-gray-300" />
+              <span>Discord</span>
+            </a>
+            <a href="https://x.com/_madiou" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
+              <TwitterIcon size={18} className="text-gray-300" />
+              <span>Twitter</span>
+            </a>
+          </div>
+        </div>
+      )}
+
 
       {/* Title */}
       <section className="py-16 px-6">
