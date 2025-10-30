@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 export default function Home() {
   useEffect(() => {
@@ -30,39 +31,73 @@ export default function Home() {
     };
   }, []);
 
+  const [pinned, setPinned] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setPinned(window.scrollY > 40);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#0d0d0d] text-[#f8f8f8]">
+    <div className="min-h-screen bg-black text-[#f8f8f8]">
       {/* Navigation */}
-      <nav className="flex items-center justify-between p-6 border-b border-gray-800">
-        <div className="text-2xl font-bold gradient-text pulse-neon">
-          Slopcel
+      <nav className={`nav-shell ${pinned ? 'is-pinned' : 'border-b border-gray-800'} flex items-center justify-between p-6`}>        
+        <div className="flex items-center gap-3">
+          <div className="relative h-8 w-8 overflow-hidden rounded-md">
+            <Image
+              src="https://pbs.twimg.com/profile_images/1979532596615802880/dNH0WjJ4_400x400.jpg"
+              alt="Slopcel logo"
+              fill
+              sizes="32px"
+              className="object-cover"
+            />
+          </div>
+          <div className="text-xl md:text-2xl font-bold text-white">Slopcel</div>
         </div>
-        <div className="flex gap-6">
-          <a href="#about" className="hover:text-[#ff00cc] transition-colors">About</a>
-          <a href="#projects" className="hover:text-[#ff00cc] transition-colors">Projects</a>
-          <a href="#pricing" className="hover:text-[#ff00cc] transition-colors">Pricing</a>
-          <a href="/hall-of-fame" className="hover:text-[#ff00cc] transition-colors">Hall of Fame</a>
+        <div className="flex items-center gap-5">
+          {pinned ? (
+            <>
+              <a href="#pricing" aria-label="Pricing" className="text-gray-300 hover:text-white transition-colors">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 4.5V12c0 5-3.8 8.9-9 9-5.2-.1-9-4-9-9V7.5L12 3Zm0 4-5 2.5V12c0 3.9 2.9 6.9 6.8 7 3.9-.1 6.2-3.1 6.2-7V9.5L12 7Zm0 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></svg>
+              </a>
+              <a href="/hall-of-fame" aria-label="Hall of Fame" className="text-gray-300 hover:text-white transition-colors">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9.5 8H3l5 3.6L6.5 18 12 14.4 17.5 18 16 11.6 21 8h-6.5L12 2Z"/></svg>
+              </a>
+              <a href="https://discord.com/" target="_blank" rel="noopener noreferrer" aria-label="Discord" className="text-gray-300 hover:text-white transition-colors">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A19.7 19.7 0 0 0 15.9 3l-.2.3c1.6.5 2.9 1.2 4.1 2.1-1.7-.8-3.3-1.3-4.9-1.6-.9.2-1.8.5-2.9.9-1.1-.4-2-.7-2.9-.9-1.7.3-3.3.8-4.9 1.6 1.2-.9 2.6-1.6 4.1-2.1L8.1 3A19.7 19.7 0 0 0 3.7 4.4C1.4 8 1 11.4 1.2 14.7c1.8 1.4 3.6 2.3 5.3 2.9l1.1-1.7c-.6-.2-1.1-.6-1.6-1 .3.2.7.3 1.1.5 2.3 1 4.8 1 7.1 0 .4-.2.8-.3 1.1-.5-.5.4-1 .8-1.6 1l1.1 1.7c1.7-.6 3.5-1.5 5.3-2.9.3-3.3-.2-6.7-2.5-10.3ZM8.8 13.6c-.7 0-1.3-.7-1.3-1.5 0-.9.6-1.5 1.3-1.5s1.3.7 1.3 1.5-.6 1.5-1.3 1.5Zm6.4 0c-.7 0-1.3-.7-1.3-1.5 0-.9.6-1.5 1.3-1.5s1.3.7 1.3 1.5-.6 1.5-1.3 1.5Z"/></svg>
+              </a>
+              <a href="https://x.com/_madiou" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="text-gray-300 hover:text-white transition-colors">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2H21l-6.543 7.48L22 22h-6.828l-4.77-6.223L4.8 22H2l7.028-8.04L2 2h6.828l4.325 5.77L18.244 2Zm-1.197 18h1.887L7.03 4h-1.89l10.906 16Z"/></svg>
+              </a>
+            </>
+          ) : (
+            <>
+              <a href="#pricing" className="hover:text-[#ff00cc] transition-colors">Pricing</a>
+              <a href="/hall-of-fame" className="hover:text-[#ff00cc] transition-colors">Hall of Fame</a>
+              <a href="https://discord.com/" target="_blank" rel="noopener noreferrer" className="hover:text-[#ff00cc] transition-colors">Discord</a>
+              <a href="https://x.com/_madiou" target="_blank" rel="noopener noreferrer" className="hover:text-[#ff00cc] transition-colors">Twitter</a>
+            </>
+          )}
         </div>
       </nav>
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center px-6">
-        {/* Background gradient streak */}
-        <div className="absolute inset-0 neon-gradient opacity-10 blur-3xl"></div>
+        {/* Subtle, smaller hero gradient */}
+        <div className="hero-gradient"></div>
         
-        {/* Floating particles */}
-        <div className="absolute top-20 left-10 w-2 h-2 bg-[#ff6b6b] rounded-full floating"></div>
-        <div className="absolute top-40 right-20 w-1 h-1 bg-[#ff8c42] rounded-full floating" style={{animationDelay: '2s'}}></div>
-        <div className="absolute bottom-40 left-20 w-3 h-3 bg-[#ffd93d] rounded-full floating" style={{animationDelay: '4s'}}></div>
+        {/* Floating particles removed for a cleaner, larger hero backdrop */}
         
         <div className="text-center max-w-4xl mx-auto relative z-10">
-          <h1 className="text-6xl md:text-8xl font-bold mb-6 text-white">
+          <h1 className="text-5xl md:text-8xl font-bold mb-6 text-white">
             Deploy your slop in seconds.
           </h1>
-          <p className="text-xl md:text-2xl mb-12 text-gray-300 max-w-2xl mx-auto">
+          <p className="text-lg md:text-2xl mb-10 text-gray-300 max-w-2xl mx-auto">
             Slopcel is the world's worst hosting platform. Built by AI, for AI — and possibly for you.
           </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
             <button className="btn-primary hover-shake">
               Submit an Idea
             </button>
@@ -71,36 +106,55 @@ export default function Home() {
             </button>
           </div>
           
-          {/* Fake Deploy Button */}
-          <div className="mt-8">
-            <button className="btn-primary hover-shake opacity-50">
-              Deploy Now (Doesn't Work)
-            </button>
-          </div>
         </div>
       </section>
 
       {/* About Section */}
       <section id="about" className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="relative">
-              <div className="w-64 h-64 mx-auto bg-gradient-to-br from-[#ff6b6b] to-[#ff8c42] rounded-full glow-pink"></div>
-              <div className="absolute inset-0 w-64 h-64 mx-auto bg-black rounded-full opacity-20"></div>
+          <div className="grid md:grid-cols-[320px_1fr] gap-10 md:gap-12 items-start">
+            {/* Profile image (centered) */}
+            <div className="mx-auto md:mx-0 w-[320px]">
+              <div className="rounded-xl border border-gray-800 bg-[#141414] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.4)] flex items-center justify-center">
+                <div className="relative h-44 w-44 rounded-2xl overflow-hidden">
+                  <Image
+                    src="https://pbs.twimg.com/profile_images/1742232317178060800/CBBMsEg0_400x400.jpg"
+                    alt="Madiou profile picture"
+                    fill
+                    sizes="176px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Narrative text */}
             <div>
-              <h2 className="text-4xl font-bold mb-6 text-white">
-                About Slopcel
-              </h2>
-              <p className="text-lg text-gray-300 mb-6">
-                Slopcel is a parody platform built to celebrate the art of bad automation.
-                You submit an idea → AI builds it → We deploy it → Chaos ensues.
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Hey, it's Madiou <span role="img" aria-label="waving hand">👋</span></h2>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                In 2018, I believed I was Mark Zuckerberg, built a startup for 1 year, and got 0 users...
               </p>
-              <p className="text-sm text-gray-500 mb-4">
-                Follow the madness on <a href="#" className="text-[#ff00cc] hover:underline">Twitter → @slopcel</a>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                A few years after my burnout, I restarted the journey differently: I shipped fast —
+                <span className="underline decoration-gray-600 underline-offset-4"> 16 startups in 2 years</span>. Now I'm happy and
+                building products.
               </p>
-              <p className="text-xs text-gray-600">
-                Made by humans (for now)
+              <p className="text-gray-300 leading-relaxed mb-6">
+                I realized I was doing the same thing over and over: set up DNS records, listen to Stripe webhooks, design pricing section... So I built Slopcel for 3 reasons:
+              </p>
+              <ol className="list-decimal pl-6 space-y-3 text-gray-200 mb-8">
+                <li><span className="font-semibold">Save time</span> and focus on what matters: building a business</li>
+                <li><span className="font-semibold">Avoid headaches</span> like emails ending in spam or handling Stripe subscriptions</li>
+                <li><span className="font-semibold">Get profitable fast</span>—the more you ship, the more you learn, the more you earn</li>
+              </ol>
+
+              <p className="text-gray-300">
+                <a href="https://x.com/_madiou" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:opacity-90">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="text-gray-300">
+                    <path d="M18.244 2H21l-6.543 7.48L22 22h-6.828l-4.77-6.223L4.8 22H2l7.028-8.04L2 2h6.828l4.325 5.77L18.244 2Zm-1.197 18h1.887L7.03 4h-1.89l10.906 16Z"/>
+                  </svg>
+                  <span className="underline">Follow on X (Twitter)</span>
+                </a>
               </p>
             </div>
           </div>
@@ -108,7 +162,7 @@ export default function Home() {
       </section>
 
       {/* Featured Apps Section */}
-      <section id="projects" className="py-20 px-6 bg-[#1a1a1a]">
+      {/* <section id="projects" className="py-20 px-6 bg-[#1a1a1a]">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl font-bold text-center mb-4 text-white">
             🧩 Featured Slop
@@ -146,13 +200,13 @@ export default function Home() {
             </button>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Pricing Section */}
       <section id="pricing" className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl font-bold text-center mb-4 text-white">
-            💰 Pricing (Parody Style)
+            💰 Pricing
           </h2>
           <p className="text-center text-gray-400 mb-12">
             Choose your level of chaos
@@ -163,7 +217,7 @@ export default function Home() {
             <div className="card-hover bg-[#0d0d0d] p-8 rounded-lg border border-gray-800 relative">
               <div className="text-center">
                 <h3 className="text-2xl font-bold mb-2">The Bare Minimum</h3>
-                <div className="text-4xl font-bold gradient-text mb-4">$0</div>
+                <div className="text-4xl font-bold text-white mb-4">$50</div>
                 <p className="text-gray-400 mb-6">Host 1 slop app. No refunds.</p>
                 <ul className="text-left space-y-2 mb-8">
                   <li>✓ 1 app deployment</li>
@@ -176,13 +230,10 @@ export default function Home() {
             </div>
             
             {/* Pro Tier */}
-            <div className="card-hover bg-[#0d0d0d] p-8 rounded-lg border-2 border-[#ff00cc] relative glow-pink">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#ff00cc] text-black px-4 py-1 rounded-full text-sm font-bold">
-                Most Popular
-              </div>
+            <div className="card-hover bg-[#0d0d0d] p-8 rounded-lg border border-gray-800 relative">
               <div className="text-center">
                 <h3 className="text-2xl font-bold mb-2">More Slop</h3>
-                <div className="text-4xl font-bold gradient-text mb-4">$4.99/mo</div>
+                <div className="text-4xl font-bold text-white mb-4">$75</div>
                 <p className="text-gray-400 mb-6">10 apps, more chaos, still no uptime guarantee.</p>
                 <ul className="text-left space-y-2 mb-8">
                   <li>✓ 10 app deployments</li>
@@ -213,44 +264,78 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 px-6 bg-[#1a1a1a]">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-12 text-white">
-            What People Are Saying
-          </h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="card-hover bg-[#0d0d0d] p-6 rounded-lg border border-gray-800">
-              <p className="text-lg italic mb-4">"It deployed my app and my sanity."</p>
-              <p className="text-gray-400">– Anonymous Developer</p>
-            </div>
-            <div className="card-hover bg-[#0d0d0d] p-6 rounded-lg border border-gray-800">
-              <p className="text-lg italic mb-4">"Vercel but after 3 drinks."</p>
-              <p className="text-gray-400">– Tech Blogger</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Testimonials removed */}
 
       {/* Footer */}
-      <footer className="py-12 px-6 border-t border-gray-800">
+      <footer className="py-20 px-6 border-t border-gray-800">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-6 md:mb-0">
-              <div className="text-2xl font-bold gradient-text mb-2">Slopcel</div>
-              <p className="text-gray-400 text-sm">
-                © 2025 Slopcel. All rights reserved (for some reason).
+          <div className="flex flex-col md:flex-row justify-between gap-10 md:gap-16">
+            <div>
+              <div className="text-2xl font-bold text-white mb-3">Slopcel</div>
+              <p className="text-gray-400 text-sm max-w-md mb-6">
+                Deploy your slop in seconds. Built for speed, not for sanity.
               </p>
-              <p className="text-gray-500 text-xs">
-                Made with ❤️, irony, and a lot of caffeine.
-              </p>
+              <div className="flex items-center gap-4">
+                <a href="#" className="p-2 rounded-md border border-gray-800 hover:bg-[#111]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-300">
+                    <path d="M18.244 2H21l-6.543 7.48L22 22h-6.828l-4.77-6.223L4.8 22H2l7.028-8.04L2 2h6.828l4.325 5.77L18.244 2Zm-1.197 18h1.887L7.03 4h-1.89l10.906 16Z"/>
+                  </svg>
+                </a>
+                <a href="#" className="p-2 rounded-md border border-gray-800 hover:bg-[#111]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-300">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Zm1 17.93c-2.83.48-5.43-.3-7.43-1.93h.01c.51-1.52 2.05-2.64 3.92-2.64H13v4.57ZM19.36 17.6A7.96 7.96 0 0 0 20 12c0-1.61-.48-3.11-1.31-4.36H18c-1.1 0-2 .9-2 2v1h-4V7h2V5h-2V4.07c.33-.05.66-.07 1-.07 4.42 0 8 3.58 8 8 0 1.61-.48 3.11-1.31 4.36h-.33Z"/>
+                  </svg>
+                </a>
+                <a href="#" className="p-2 rounded-md border border-gray-800 hover:bg-[#111]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-300">
+                    <path d="M12 12.713 2 6.75V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6.75l-10 5.963ZM12 10 2 4h20L12 10Z"/>
+                  </svg>
+                </a>
+                <a href="#" className="p-2 rounded-md border border-gray-800 hover:bg-[#111]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-300">
+                    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1 17.93A8.001 8.001 0 0 1 4.07 13H11v6.93ZM4.07 11A8.001 8.001 0 0 1 11 4.07V11H4.07ZM13 4.07A8.001 8.001 0 0 1 19.93 11H13V4.07ZM13 13h6.93A8.001 8.001 0 0 1 13 19.93V13Z"/>
+                  </svg>
+                </a>
+              </div>
             </div>
-            <div className="flex gap-6">
-              <a href="#" className="text-gray-400 hover:text-[#ff00cc] transition-colors">Twitter</a>
-              <a href="#" className="text-gray-400 hover:text-[#ff00cc] transition-colors">GitHub</a>
-              <a href="#" className="text-gray-400 hover:text-[#ff00cc] transition-colors">Privacy</a>
-              <a href="/hall-of-fame" className="text-gray-400 hover:text-[#ff00cc] transition-colors">Hall of Fame</a>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+              <div>
+                <div className="text-gray-200 font-semibold mb-3">Product</div>
+                <ul className="space-y-2 text-gray-400">
+                  <li><a href="#" className="hover:text-white">Overview</a></li>
+                  <li><a href="#" className="hover:text-white">Docs</a></li>
+                  <li><a href="#" className="hover:text-white">Changelog</a></li>
+                </ul>
+              </div>
+              <div>
+                <div className="text-gray-200 font-semibold mb-3">Company</div>
+                <ul className="space-y-2 text-gray-400">
+                  <li><a href="#" className="hover:text-white">About</a></li>
+                  <li><a href="#" className="hover:text-white">Careers</a></li>
+                  <li><a href="#" className="hover:text-white">Contact</a></li>
+                </ul>
+              </div>
+              <div>
+                <div className="text-gray-200 font-semibold mb-3">Legal</div>
+                <ul className="space-y-2 text-gray-400">
+                  <li><a href="#" className="hover:text-white">Privacy</a></li>
+                  <li><a href="#" className="hover:text-white">Terms</a></li>
+                </ul>
+              </div>
+              <div>
+                <div className="text-gray-200 font-semibold mb-3">More</div>
+                <ul className="space-y-2 text-gray-400">
+                  <li><a href="#" className="hover:text-white">Hall of Fame</a></li>
+                  <li><a href="#" className="hover:text-white">Status</a></li>
+                </ul>
+              </div>
             </div>
+          </div>
+
+          <div className="mt-12 pt-8 border-t border-gray-800 text-sm text-gray-500 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>© 2025 Slopcel. All rights reserved.</div>
+            <div className="text-gray-500">Made with ❤️ and caffeine.</div>
           </div>
         </div>
       </footer>

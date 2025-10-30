@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0d0d0d;
-  --foreground: #f8f8f8;
-  --accent-pink: #ff6b6b;
-  --accent-orange: #ff8c42;
-  --accent-yellow: #ffd93d;
-  --accent-purple: #8b5cf6;
+  --background: #000000;
+  --foreground: #e5e7eb;
+  /* Subtle, cooler palette */
+  --accent-orange: #ff7a1a;
+  --accent-blue: #3b82f6;
+  --accent-purple: #a855f7;
 }
 
 @theme inline {
@@ -23,13 +23,52 @@ body {
   overflow-x: hidden;
 }
 
-/* Neon gradient backgrounds */
-.neon-gradient {
-  background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange), var(--accent-yellow));
+/* Subtle hero gradient */
+.hero-gradient {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  top: 0;
+  width: 85vw;
+  height: 70vh;
+  background:
+    radial-gradient(600px 380px at 25% 25%, color-mix(in oklab, var(--accent-orange) 85%, black) 0%, transparent 60%),
+    radial-gradient(700px 420px at 70% 40%, color-mix(in oklab, var(--accent-blue) 85%, black) 0%, transparent 65%),
+    radial-gradient(600px 380px at 55% 75%, color-mix(in oklab, var(--accent-purple) 85%, black) 0%, transparent 65%);
+  filter: blur(90px) saturate(120%);
+  opacity: 0.35;
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
-.neon-gradient-vertical {
-  background: linear-gradient(180deg, var(--accent-pink), var(--accent-orange), var(--accent-yellow));
+@media (max-width: 768px) {
+  .hero-gradient {
+    width: 100vw;
+    height: 45vh;
+    top: 0;
+    filter: blur(70px) saturate(120%);
+    opacity: 0.32;
+    transform: none;
+  }
+}
+
+/* Sticky nav transition */
+.nav-shell {
+  transition: all 250ms ease;
+}
+
+.nav-shell.is-pinned {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1100px, 94%);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  padding: 10px 14px;
+  backdrop-filter: blur(10px);
+  z-index: 50;
 }
 
 /* Glow effects */
@@ -87,7 +126,7 @@ body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange), var(--accent-yellow));
+  background: linear-gradient(90deg, var(--accent-orange), var(--accent-blue), var(--accent-purple));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -105,9 +144,9 @@ body {
 
 /* Button styles */
 .btn-primary {
-  background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange));
-  border: none;
-  color: white;
+  background: #ffffff;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #000000;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -118,7 +157,7 @@ body {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.15);
 }
 
 .btn-primary::before {
@@ -137,9 +176,9 @@ body {
 }
 
 .btn-secondary {
-  background: transparent;
-  border: 2px solid var(--accent-pink);
-  color: var(--accent-pink);
+  background: #ffffff;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #000000;
   padding: 10px 22px;
   border-radius: 8px;
   font-weight: 600;
@@ -147,7 +186,7 @@ body {
 }
 
 .btn-secondary:hover {
-  background: var(--accent-pink);
-  color: white;
-  box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+  background: #f5f5f5;
+  color: #000000;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
 }
