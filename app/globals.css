@@ -62,8 +62,7 @@ body {
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  /* width: min(980px, 94%); */
-  width: 680px;
+  width: min(680px, 94%);
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
@@ -196,7 +195,7 @@ body {
 
 /* Dark inverse button (for View Slop) */
 .btn-inverse {
-  background: #0f0f0f;
+  background: black;
   border: 1px solid rgba(255,255,255,0.2);
   color: #ffffff;
   padding: 10px 22px;

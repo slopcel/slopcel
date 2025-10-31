@@ -70,11 +70,11 @@ export default function Home() {
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Hey, it's Madiou <span role="img" aria-label="waving hand">👋</span></h2>
               <p className="text-gray-300 leading-relaxed mb-6">
-                  I hate AI vibecoded slop and I hate Vercel. However I cannot deny how powerful vibecoding is so I decided to kill 2 birds with one stone by building my own hosting platform.             
+                  I hate AI vibecoded slop and I hate Vercel. However I cannot deny how powerful vibecoding is, so I decided to kill 2 birds with one stone by building my own hosting platform.             
               </p>
               <p className="text-gray-300 leading-relaxed mb-6">
-                Despite the hilarious name and the unserious presentation of this website, I do want to try my hand at vibecoding.
-                This is where you come in. Unlike Vercel, where anyone can deploy their project, this website is solely dedicated to my vibecoded slop. However, you can submit your own ideas and they will be deployed by me. Here is how it works:
+                Despite the hilarious name and the unserious presentation of this website, I do want to try my hand at vibecoding, and for that I need your help.
+                Unlike Vercel, where anyone can deploy their project, this website is solely dedicated to my vibecoded slop. But you can submit your own ideas and they will be deployed by me. Here is how it works:
               </p>
               <ol className="list-decimal pl-6 space-y-3 text-gray-200 mb-8">
                 <li><span className="font-semibold">Submit an idea</span>—by either paying a fee or by reaching out to me on my Twitter posts</li>
