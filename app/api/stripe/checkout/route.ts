@@ -3,11 +3,18 @@ import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit, getClientIP, rateLimitHeaders, rateLimitConfigs } from '@/lib/rate-limit';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
-});
-
 export async function POST(request: NextRequest) {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) {
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+
+  const stripe = new Stripe(stripeSecretKey, {
+    apiVersion: '2025-02-24.acacia',
+  });
   // Rate limit: 5 requests per minute for checkout
   const ip = getClientIP(request);
   const rateLimitResult = rateLimit(`checkout:${ip}`, rateLimitConfigs.strict);

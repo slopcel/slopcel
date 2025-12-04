@@ -3,13 +3,20 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import Stripe from 'stripe';
 import { rateLimit, getClientIP, rateLimitHeaders, rateLimitConfigs } from '@/lib/rate-limit';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
-});
-
 // This endpoint links any orders made with the same email to the current user
 // This handles the case where a user makes a guest purchase, then creates/logs into their account
 export async function POST(request: NextRequest) {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) {
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+
+  const stripe = new Stripe(stripeSecretKey, {
+    apiVersion: '2025-02-24.acacia',
+  });
   // Rate limit: 30 requests per minute
   const ip = getClientIP(request);
   const rateLimitResult = rateLimit(`link-email:${ip}`, rateLimitConfigs.standard);
