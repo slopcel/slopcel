@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase/server';
+import { createPayPalOrder, getPayPalClientId } from '@/lib/paypal';
 import { rateLimit, getClientIP, rateLimitHeaders, rateLimitConfigs } from '@/lib/rate-limit';
 
 export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  if (!stripeSecretKey) {
-    return NextResponse.json(
-      { error: 'Server configuration error' },
-      { status: 500 }
-    );
-  }
-
-  const stripe = new Stripe(stripeSecretKey, {
-    apiVersion: '2025-02-24.acacia',
-  });
   // Rate limit: 5 requests per minute for checkout
   const ip = getClientIP(request);
   const rateLimitResult = rateLimit(`checkout:${ip}`, rateLimitConfigs.strict);
@@ -29,11 +18,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { priceId, tier } = await request.json();
+    const { tier } = await request.json();
 
-    if (!priceId && !tier) {
+    if (!tier) {
       return NextResponse.json(
-        { error: 'Price ID or tier is required' },
+        { error: 'Tier is required' },
         { status: 400 }
       );
     }
@@ -89,50 +78,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: tierName,
-              description: tierDescription,
-            },
-            unit_amount: amount,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${request.nextUrl.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${request.nextUrl.origin}/#pricing`,
-      customer_email: user?.email || undefined, // Pre-fill email if logged in
-      client_reference_id: user?.id || undefined,
-      metadata: {
-        user_id: user?.id || 'guest',
-        tier: tier || 'bare_minimum',
-        create_account: user ? 'false' : 'true', // Flag to create account after payment
-      },
+    // Create PayPal Order
+    // Note: PayPal automatically appends ?token=ORDER_ID&PayerID=PAYER_ID to the return URL
+    const origin = request.nextUrl.origin;
+    const paypalOrder = await createPayPalOrder({
+      amount,
+      tierName,
+      tierDescription,
+      userId: user?.id,
+      tier,
+      returnUrl: `${origin}/payment-success`,
+      cancelUrl: `${origin}/#pricing`,
     });
 
+    // Find the approval URL
+    const approvalUrl = paypalOrder.links.find(link => link.rel === 'approve')?.href;
+
+    if (!approvalUrl) {
+      throw new Error('No approval URL in PayPal response');
+    }
+
     // Create order record in database (only if user is logged in)
-    // For guest checkout, order will be created in webhook after account creation
+    // For guest checkout, order will be created after capture
     if (user) {
-      await supabase.from('orders').insert({
+      await (supabase.from('orders') as any).insert({
         user_id: user.id,
-        stripe_session_id: session.id,
+        paypal_order_id: paypalOrder.id,
         amount: amount,
         status: 'pending',
       });
     }
 
-    return NextResponse.json({ sessionId: session.id, url: session.url });
+    return NextResponse.json({ 
+      orderId: paypalOrder.id, 
+      approvalUrl,
+      clientId: getPayPalClientId(),
+    });
   } catch (error: any) {
-    console.error('Stripe checkout error:', error);
+    console.error('PayPal create order error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create checkout session' },
+      { error: error.message || 'Failed to create order' },
       { status: 500 }
     );
   }

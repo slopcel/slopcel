@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 interface OrderWithUser {
   id: string;
   user_id: string;
-  stripe_session_id: string | null;
+  paypal_order_id: string | null;
   amount: number;
   status: 'pending' | 'completed' | 'failed';
   project_id: string | null;
@@ -280,19 +280,25 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onProjectCre
             </div>
           </div>
 
-          {/* Stripe Link */}
-          {order.stripe_session_id && (
+          {/* PayPal Order ID */}
+          {order.paypal_order_id && (
             <div className="bg-[#141414] rounded-lg p-4">
-              <div className="text-gray-400 text-sm mb-2">Stripe Payment</div>
-              <a
-                href={`https://dashboard.stripe.com/payments/${order.stripe_session_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-[#d4a017] hover:underline"
-              >
-                View in Stripe Dashboard
-                <ExternalLink size={16} />
-              </a>
+              <div className="text-gray-400 text-sm mb-2">PayPal Payment</div>
+              <div className="flex items-center gap-2">
+                <code className="text-white bg-black/30 px-2 py-1 rounded text-sm font-mono">
+                  {order.paypal_order_id}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(order.paypal_order_id!);
+                    toast.success('PayPal Order ID copied!');
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
+                  title="Copy PayPal Order ID"
+                >
+                  <Copy size={14} />
+                </button>
+              </div>
             </div>
           )}
 

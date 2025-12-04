@@ -131,7 +131,7 @@ export default function Home() {
   const handleCheckout = async (tier: 'bare_minimum' | 'premium' | 'standard' | 'hall_of_fame') => {
     setLoading(true);
     try {
-      const response = await fetch('/api/stripe/checkout', {
+      const response = await fetch('/api/paypal/create-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,11 +141,10 @@ export default function Home() {
 
       const data = await response.json();
 
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.approvalUrl) {
+        window.location.href = data.approvalUrl;
       } else if (data.error) {
         if (data.requiresAuth) {
-          // Redirect to login if auth is required
           window.location.href = '/login';
         } else {
           toast.error(data.error);
@@ -153,8 +152,8 @@ export default function Home() {
         }
       }
     } catch (error) {
-      console.error('Error creating checkout session:', error);
-      toast.error('Failed to create checkout session. Please try again.');
+      console.error('Error creating PayPal order:', error);
+      toast.error('Failed to create order. Please try again.');
       setLoading(false);
     }
   };
@@ -200,7 +199,7 @@ export default function Home() {
               <div className="rounded-xl border border-gray-800 bg-[#141414] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.4)] flex items-center justify-center">
                 <div className="relative h-44 w-44 rounded-2xl overflow-hidden">
                   <Image
-                    src="https://pbs.twimg.com/profile_images/1742232317178060800/CBBMsEg0_400x400.jpg"
+                    src="/madiou_logo.jpg"
                     alt="Madiou profile picture"
                     fill
                     sizes="176px"

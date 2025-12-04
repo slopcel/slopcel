@@ -131,8 +131,9 @@ export interface Database {
       orders: {
         Row: {
           id: string
-          user_id: string
-          stripe_session_id: string | null
+          user_id: string | null
+          paypal_order_id: string | null
+          payer_email: string | null
           amount: number
           status: 'pending' | 'completed' | 'failed'
           project_id: string | null
@@ -143,8 +144,9 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
-          stripe_session_id?: string | null
+          user_id?: string | null
+          paypal_order_id?: string | null
+          payer_email?: string | null
           amount: number
           status?: 'pending' | 'completed' | 'failed'
           project_id?: string | null
@@ -155,8 +157,9 @@ export interface Database {
         }
         Update: {
           id?: string
-          user_id?: string
-          stripe_session_id?: string | null
+          user_id?: string | null
+          paypal_order_id?: string | null
+          payer_email?: string | null
           amount?: number
           status?: 'pending' | 'completed' | 'failed'
           project_id?: string | null

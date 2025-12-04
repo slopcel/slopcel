@@ -54,7 +54,7 @@ export default function Header() {
         <Link href="/" className="flex items-center gap-3">
           <span className="relative h-8 w-8 overflow-hidden rounded-md">
             <Image
-              src="https://pbs.twimg.com/profile_images/1979532596615802880/dNH0WjJ4_400x400.jpg"
+              src="/slopcel-logo.jpg"
               alt="Slopcel logo"
               fill
               sizes="32px"

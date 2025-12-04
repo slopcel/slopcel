@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
-import Stripe from 'stripe';
 import { rateLimit, getClientIP, rateLimitHeaders, rateLimitConfigs } from '@/lib/rate-limit';
 
 export const runtime = 'edge';
@@ -8,17 +7,6 @@ export const runtime = 'edge';
 // This endpoint links any orders made with the same email to the current user
 // This handles the case where a user makes a guest purchase, then creates/logs into their account
 export async function POST(request: NextRequest) {
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  if (!stripeSecretKey) {
-    return NextResponse.json(
-      { error: 'Server configuration error' },
-      { status: 500 }
-    );
-  }
-
-  const stripe = new Stripe(stripeSecretKey, {
-    apiVersion: '2025-02-24.acacia',
-  });
   // Rate limit: 30 requests per minute
   const ip = getClientIP(request);
   const rateLimitResult = rateLimit(`link-email:${ip}`, rateLimitConfigs.standard);
@@ -50,7 +38,6 @@ export async function POST(request: NextRequest) {
 
     const serviceClient = await createServiceRoleClient();
     let linkedCount = 0;
-    let createdCount = 0;
 
     // 1. Link orders from other accounts with same email
     const { data: usersList } = await serviceClient.auth.admin.listUsers();
@@ -69,72 +56,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Check for recent Stripe sessions with this email that don't have orders
-    try {
-      // Get recent checkout sessions (last 24 hours) for this email
-      const sessions = await stripe.checkout.sessions.list({
-        limit: 10,
-        customer_details: { email: user.email },
-      });
+    // 2. Link guest orders by payer_email (orders without user_id)
+    // Use ilike for case-insensitive email matching
+    const { data: guestOrders, error: guestError } = await (serviceClient
+      .from('orders') as any)
+      .update({ user_id: user.id })
+      .ilike('payer_email', user.email)
+      .is('user_id', null)
+      .select();
 
-      for (const session of sessions.data) {
-        // Only process completed sessions
-        if (session.payment_status !== 'paid') continue;
-        
-        // Check if order exists for this session
-        const { data: existingOrder } = await (serviceClient
-          .from('orders') as any)
-          .select('id')
-          .eq('stripe_session_id', session.id)
-          .maybeSingle();
-
-        if (!existingOrder && session.amount_total) {
-          // Create the order
-          let hallOfFamePosition: number | null = null;
-          const amount = session.amount_total;
-
-          // Get HOF position if applicable
-          if (amount === 30000 || amount === 15000 || amount === 7500) {
-            const { data: position } = await serviceClient
-              .rpc('get_next_hall_of_fame_position', { amount_cents: amount } as any);
-            if (position !== null && position !== undefined) {
-              hallOfFamePosition = position as number;
-            }
-          }
-
-          const { error: insertError } = await (serviceClient
-            .from('orders') as any)
-            .insert({
-              user_id: user.id,
-              stripe_session_id: session.id,
-              amount: amount,
-              status: 'completed',
-              hall_of_fame_position: hallOfFamePosition,
-            });
-
-          if (!insertError) {
-            createdCount++;
-            console.log(`Created order for session ${session.id}, user ${user.id}`);
-          } else {
-            console.error('Error creating order from session:', insertError);
-          }
-        }
-      }
-    } catch (stripeError) {
-      console.error('Error checking Stripe sessions:', stripeError);
-      // Don't fail the whole request if Stripe check fails
+    if (!guestError && guestOrders && guestOrders.length > 0) {
+      linkedCount += guestOrders.length;
+      console.log(`Linked ${guestOrders.length} guest orders for user ${user.id} (${user.email})`);
     }
-
-    const totalLinked = linkedCount + createdCount;
     
-    if (totalLinked > 0) {
-      console.log(`Linked/created ${totalLinked} orders for user ${user.id} (${user.email})`);
+    if (linkedCount > 0) {
+      console.log(`Total linked: ${linkedCount} orders for user ${user.id} (${user.email})`);
     }
 
     return NextResponse.json({ 
-      linked: totalLinked,
-      message: totalLinked > 0 
-        ? `Successfully linked ${totalLinked} order(s) to your account!` 
+      linked: linkedCount,
+      message: linkedCount > 0 
+        ? `Successfully linked ${linkedCount} order(s) to your account!` 
         : 'No orders to link'
     });
   } catch (error) {
@@ -145,4 +88,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

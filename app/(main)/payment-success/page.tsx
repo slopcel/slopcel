@@ -4,56 +4,78 @@ import { Suspense, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle, Mail, ArrowRight, Loader2 } from 'lucide-react';
+import { CheckCircle, Mail, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 
 function PaymentSuccessContent() {
   const [loading, setLoading] = useState(true);
+  const [capturing, setCapturing] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [captureError, setCaptureError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+  const [paymentComplete, setPaymentComplete] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
+  const paypalOrderId = searchParams.get('token'); // PayPal returns token param
   const supabase = createClient();
 
   useEffect(() => {
-    checkAuthAndOrder();
+    initializePayment();
   }, []);
 
-  const checkAuthAndOrder = async () => {
+  const initializePayment = async () => {
     // Check if user is already logged in
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
       setIsLoggedIn(true);
       setCustomerEmail(user.email || null);
-      // Try to link any orders by email
-      try {
-        await fetch('/api/orders/link-by-email', { method: 'POST' });
-      } catch (e) {
-        console.error('Error linking orders:', e);
-      }
     }
     
-    // If we have a session ID, try to get the customer email from Stripe
-    if (sessionId && !user) {
+    // If we have a PayPal order ID, capture the payment
+    if (paypalOrderId) {
+      setCapturing(true);
       try {
-        const response = await fetch(`/api/stripe/session-info?session_id=${sessionId}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.email) {
-            setCustomerEmail(data.email);
-            setEmail(data.email);
+        const captureResponse = await fetch('/api/paypal/capture-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: paypalOrderId }),
+        });
+
+        if (captureResponse.ok) {
+          const captureData = await captureResponse.json();
+          setPaymentComplete(true);
+          
+          if (captureData.email) {
+            setCustomerEmail(captureData.email);
+            setEmail(captureData.email);
           }
+          
+          // If user is logged in, try to link orders
+          if (user) {
+            try {
+              await fetch('/api/orders/link-by-email', { method: 'POST' });
+            } catch (e) {
+              console.error('Error linking orders:', e);
+            }
+          }
+        } else {
+          const errorData = await captureResponse.json();
+          setCaptureError(errorData.error || 'Payment capture failed');
         }
       } catch (e) {
-        console.error('Error fetching session info:', e);
+        console.error('Error capturing payment:', e);
+        setCaptureError('Failed to process payment. Please contact support.');
       }
+      setCapturing(false);
+    } else {
+      // No order ID - maybe user navigated directly here
+      setPaymentComplete(true); // Assume they completed payment elsewhere
     }
     
     setLoading(false);
@@ -77,7 +99,6 @@ function PaymentSuccessContent() {
     setIsSubmitting(true);
 
     try {
-      // Try to sign up
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -87,7 +108,6 @@ function PaymentSuccessContent() {
       });
 
       if (signUpError) {
-        // If user already exists, try to sign in
         if (signUpError.message.includes('already registered')) {
           setError('An account with this email already exists. Please sign in instead.');
         } else {
@@ -97,17 +117,13 @@ function PaymentSuccessContent() {
         return;
       }
 
-      // If sign up successful, link orders and redirect
       if (data.user) {
-        // Try to link orders
         await fetch('/api/orders/link-by-email', { method: 'POST' });
         
         if (data.session) {
-          // User is logged in, redirect to dashboard
           router.push('/dashboard');
           router.refresh();
         } else {
-          // Email confirmation required
           setSuccess('Account created! Please check your email to confirm your account, then sign in.');
         }
       }
@@ -134,22 +150,53 @@ function PaymentSuccessContent() {
       return;
     }
 
-    // Link orders and redirect
     await fetch('/api/orders/link-by-email', { method: 'POST' });
     router.push('/dashboard');
     router.refresh();
   };
 
-  if (loading) {
+  // Loading state
+  if (loading || capturing) {
     return (
-      <div className="min-h-screen bg-black text-[#f8f8f8] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#d4a017]" />
+      <div className="min-h-screen bg-black text-[#f8f8f8] flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#d4a017] mb-4" />
+        <p className="text-gray-400">
+          {capturing ? 'Processing your payment...' : 'Loading...'}
+        </p>
+      </div>
+    );
+  }
+
+  // Capture error state
+  if (captureError) {
+    return (
+      <div className="min-h-screen bg-black text-[#f8f8f8] flex items-center justify-center px-6">
+        <div className="max-w-md w-full text-center">
+          <div className="mb-8 flex justify-center">
+            <div className="w-20 h-20 bg-red-900/30 rounded-full flex items-center justify-center">
+              <AlertCircle className="text-red-400 w-10 h-10" />
+            </div>
+          </div>
+          
+          <h1 className="text-3xl font-bold text-white mb-4">Payment Issue</h1>
+          <p className="text-gray-400 mb-8">{captureError}</p>
+
+          <div className="flex flex-col gap-4">
+            <Link href="/#pricing" className="btn-primary inline-flex items-center justify-center gap-2">
+              Try Again
+              <ArrowRight size={18} />
+            </Link>
+            <Link href="/" className="btn-secondary">
+              Go Home
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
   // If user is logged in, show simple success and redirect option
-  if (isLoggedIn) {
+  if (isLoggedIn && paymentComplete) {
     return (
       <div className="min-h-screen bg-black text-[#f8f8f8] flex items-center justify-center px-6">
         <div className="max-w-md w-full text-center">
