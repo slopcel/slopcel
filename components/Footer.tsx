@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Footer(){
     return(
-        <footer className="py-20 px-6 border-t border-gray-800">
+        <footer className="py-20 px-6 border-t border-gray-800 bg-black">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between gap-10 md:gap-16">
             <div>
@@ -43,6 +43,7 @@ export default function Footer(){
                 <ul className="space-y-2 text-gray-400">
                   <li><Link href="/privacy" className="hover:text-white">Privacy</Link></li>
                   <li><Link href="/terms" className="hover:text-white">Terms</Link></li>
+                  <li><Link href="/refund" className="hover:text-white">Refund Policy</Link></li>
                 </ul>
               </div>
             </div>
@@ -50,7 +51,7 @@ export default function Footer(){
 
           <div className="mt-12 pt-8 border-t border-gray-800 text-sm text-gray-500 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>© 2025 Slopcel. All rights reserved.</div>
-            <div className="text-gray-500">Made with 🔥 and hatred.</div>
+            <div className="text-gray-500">Made with 🔥and hatred.</div>
           </div>
         </div>
       </footer>
