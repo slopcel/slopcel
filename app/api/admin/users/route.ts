@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     const adminEmail = process.env.ADMIN_EMAIL;
-    if (user.email !== adminEmail) {
+    if (!adminEmail || user.email !== adminEmail) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -41,28 +41,28 @@ export async function GET(request: NextRequest) {
     }
 
     // Get order counts per user
-    const { data: ordersData } = await serviceClient
-      .from('orders')
+    const { data: ordersData } = await (serviceClient
+      .from('orders') as any)
       .select('user_id');
 
-    const orderCounts = ordersData?.reduce((acc, order) => {
+    const orderCounts = (ordersData || []).reduce((acc: Record<string, number>, order: any) => {
       if (order.user_id) {
         acc[order.user_id] = (acc[order.user_id] || 0) + 1;
       }
       return acc;
-    }, {} as Record<string, number>) || {};
+    }, {} as Record<string, number>);
 
     // Get profiles for users
     const userIds = authUsers.users.map(u => u.id);
-    const { data: profiles } = await serviceClient
-      .from('profiles')
+    const { data: profiles } = await (serviceClient
+      .from('profiles') as any)
       .select('id, display_name, avatar_url')
       .in('id', userIds);
 
-    const profilesMap = profiles?.reduce((acc, p) => {
+    const profilesMap = (profiles || []).reduce((acc: Record<string, any>, p: any) => {
       acc[p.id] = p;
       return acc;
-    }, {} as Record<string, any>) || {};
+    }, {} as Record<string, any>);
 
     // Combine the data
     const users = authUsers.users.map(u => ({
@@ -83,4 +83,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message || 'An unexpected error occurred' }, { status: 500 });
   }
 }
-

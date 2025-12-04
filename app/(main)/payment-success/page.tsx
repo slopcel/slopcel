@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, Mail, ArrowRight, Loader2 } from 'lucide-react';
 
-export default function PaymentSuccess() {
+function PaymentSuccessContent() {
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -309,3 +309,14 @@ export default function PaymentSuccess() {
   );
 }
 
+export default function PaymentSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black text-[#f8f8f8] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#d4a017]" />
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
+  );
+}

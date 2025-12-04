@@ -49,8 +49,8 @@ export async function POST(request: NextRequest) {
     const otherUserIds = usersWithEmail.map(u => u.id).filter(id => id !== user.id);
     
     if (otherUserIds.length > 0) {
-      const { data: updatedOrders, error: updateError } = await serviceClient
-        .from('orders')
+      const { data: updatedOrders, error: updateError } = await (serviceClient
+        .from('orders') as any)
         .update({ user_id: user.id })
         .in('user_id', otherUserIds)
         .select();
@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
         if (session.payment_status !== 'paid') continue;
         
         // Check if order exists for this session
-        const { data: existingOrder } = await serviceClient
-          .from('orders')
+        const { data: existingOrder } = await (serviceClient
+          .from('orders') as any)
           .select('id')
           .eq('stripe_session_id', session.id)
           .maybeSingle();
@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          const { error: insertError } = await serviceClient
-            .from('orders')
+          const { error: insertError } = await (serviceClient
+            .from('orders') as any)
             .insert({
               user_id: user.id,
               stripe_session_id: session.id,

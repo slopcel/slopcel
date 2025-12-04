@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
       }
       
       // Check if order already exists (created during checkout for logged-in users)
-      const { data: existingOrder } = await supabase
-        .from('orders')
+      const { data: existingOrder } = await (supabase
+        .from('orders') as any)
         .select('id, amount, user_id, status')
         .eq('stripe_session_id', session.id)
         .maybeSingle();
@@ -112,8 +112,8 @@ export async function POST(request: NextRequest) {
         
         // Create the order if we have a user ID
         if (userId) {
-          const { data: newOrder, error: insertError } = await supabase
-            .from('orders')
+          const { data: newOrder, error: insertError } = await (supabase
+            .from('orders') as any)
             .insert({
               user_id: userId,
               stripe_session_id: session.id,
@@ -140,8 +140,8 @@ export async function POST(request: NextRequest) {
         
         // Update user_id if we have one and the order doesn't
         if (userId && !(existingOrder as any).user_id) {
-          await supabase
-            .from('orders')
+          await (supabase
+            .from('orders') as any)
             .update({ user_id: userId })
             .eq('id', orderId);
         }
@@ -165,8 +165,8 @@ export async function POST(request: NextRequest) {
       
       // Update order status and position if we have an order
       if (orderId) {
-        const { error: updateError } = await supabase
-          .from('orders')
+        const { error: updateError } = await (supabase
+          .from('orders') as any)
           .update({
             status: 'completed',
             hall_of_fame_position: hallOfFamePosition,
@@ -184,22 +184,51 @@ export async function POST(request: NextRequest) {
       break;
     }
 
-    case 'checkout.session.async_payment_failed':
-    case 'payment_intent.payment_failed': {
+    case 'checkout.session.async_payment_failed': {
       const session = event.data.object as Stripe.Checkout.Session;
       
-      // Update order status to failed
       const { error: updateError } = await (supabase
         .from('orders') as any)
-        .update({
-          status: 'failed',
-        })
+        .update({ status: 'failed' })
         .eq('stripe_session_id', session.id);
 
       if (updateError) {
         console.error('Error updating order status to failed:', updateError);
       } else {
-        console.log('Payment failed for session:', session.id);
+        console.log('Async payment failed for session:', session.id);
+      }
+      break;
+    }
+
+    case 'payment_intent.payment_failed': {
+      // PaymentIntent object - NOT a Checkout.Session
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      console.log('Payment intent failed:', paymentIntent.id);
+      
+      // Look up the checkout session associated with this payment intent
+      try {
+        const sessions = await stripe.checkout.sessions.list({
+          payment_intent: paymentIntent.id,
+          limit: 1,
+        });
+        
+        if (sessions.data.length > 0) {
+          const sessionId = sessions.data[0].id;
+          const { error: updateError } = await (supabase
+            .from('orders') as any)
+            .update({ status: 'failed' })
+            .eq('stripe_session_id', sessionId);
+
+          if (updateError) {
+            console.error('Error updating order status to failed:', updateError);
+          } else {
+            console.log('Payment failed for session:', sessionId);
+          }
+        } else {
+          console.log('No checkout session found for payment intent:', paymentIntent.id);
+        }
+      } catch (err) {
+        console.error('Error looking up checkout session:', err);
       }
       break;
     }
@@ -210,4 +239,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ received: true });
 }
-

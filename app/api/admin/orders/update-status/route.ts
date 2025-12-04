@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
 
     // Use service role client to bypass RLS and update the order
     const serviceClient = await createServiceRoleClient();
-    const { data, error } = await serviceClient
-      .from('orders')
+    const { data, error } = await (serviceClient
+      .from('orders') as any)
       .update({ status })
       .eq('id', orderId)
       .select()
