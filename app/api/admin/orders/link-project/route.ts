@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { rateLimit, getClientIP, rateLimitHeaders, rateLimitConfigs } from '@/lib/rate-limit';
 
+export const runtime = 'edge';
+
 export async function POST(request: NextRequest) {
   // Rate limit: 30 requests per minute for admin actions
   const ip = getClientIP(request);

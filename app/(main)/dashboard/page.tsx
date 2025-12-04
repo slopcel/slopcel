@@ -10,6 +10,8 @@ import AllPricingModal from '@/components/AllPricingModal';
 import Image from 'next/image';
 import { toast } from 'sonner';
 
+export const runtime = 'edge';
+
 export default function UserDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);

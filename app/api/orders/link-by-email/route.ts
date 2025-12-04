@@ -3,6 +3,8 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import Stripe from 'stripe';
 import { rateLimit, getClientIP, rateLimitHeaders, rateLimitConfigs } from '@/lib/rate-limit';
 
+export const runtime = 'edge';
+
 // This endpoint links any orders made with the same email to the current user
 // This handles the case where a user makes a guest purchase, then creates/logs into their account
 export async function POST(request: NextRequest) {

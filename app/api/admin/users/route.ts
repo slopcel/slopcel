@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { rateLimit, getClientIP, rateLimitHeaders, rateLimitConfigs } from '@/lib/rate-limit';
 
+export const runtime = 'edge';
+
 export async function GET(request: NextRequest) {
   // Rate limit: 30 requests per minute for admin actions
   const ip = getClientIP(request);

@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import Sidebar from '@/components/admin/Sidebar';
 import Header from '@/components/Header';
 
+export const runtime = 'edge';
+
 export default async function AdminLayout({
   children,
 }: {

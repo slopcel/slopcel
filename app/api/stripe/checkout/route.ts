@@ -3,6 +3,8 @@ import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit, getClientIP, rateLimitHeaders, rateLimitConfigs } from '@/lib/rate-limit';
 
+export const runtime = 'edge';
+
 export async function POST(request: NextRequest) {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey) {

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 
+export const runtime = 'edge';
+
 export async function POST(request: NextRequest) {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
