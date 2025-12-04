@@ -54,7 +54,7 @@ export default function AdminOrders() {
 
     const ordersWithUsers = (ordersData || []).map(order => ({
       ...order,
-      user_email: userEmails[order.user_id] || undefined,
+      user_email: order.user_id ? userEmails[order.user_id] : undefined,
     }));
 
     setOrders(ordersWithUsers);
@@ -178,7 +178,7 @@ export default function AdminOrders() {
               </div>
               
               <div className="text-gray-400 text-sm mb-2 truncate">
-                {order.user_email || `User: ${order.user_id.slice(0, 8)}...`}
+                {order.user_email || order.payer_email || (order.user_id ? `User: ${order.user_id.slice(0, 8)}...` : 'Guest')}
               </div>
               
               <div className="flex items-center justify-between">
@@ -242,8 +242,10 @@ export default function AdminOrders() {
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-white text-sm">
-                        {order.user_email || (
-                          <span className="text-gray-500 font-mono text-xs">{order.user_id.slice(0, 12)}...</span>
+                        {order.user_email || order.payer_email || (
+                          order.user_id 
+                            ? <span className="text-gray-500 font-mono text-xs">{order.user_id.slice(0, 12)}...</span>
+                            : <span className="text-gray-500">Guest</span>
                         )}
                       </div>
                       {order.hall_of_fame_position && (

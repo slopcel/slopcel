@@ -7,8 +7,9 @@ import { toast } from 'sonner';
 
 interface OrderWithUser {
   id: string;
-  user_id: string;
+  user_id: string | null;
   paypal_order_id: string | null;
+  payer_email: string | null;
   amount: number;
   status: 'pending' | 'completed' | 'failed';
   project_id: string | null;
@@ -246,8 +247,12 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onProjectCre
                 <div className="flex items-center gap-2">
                   <span>{order.user_email}</span>
                 </div>
-              ) : (
+              ) : order.payer_email ? (
+                <span>{order.payer_email} <span className="text-gray-500 text-xs">(PayPal)</span></span>
+              ) : order.user_id ? (
                 <span className="text-gray-500 font-mono text-sm">User ID: {order.user_id}</span>
+              ) : (
+                <span className="text-gray-500">Guest (no email)</span>
               )}
             </div>
           </div>
