@@ -140,7 +140,14 @@ export default function HallOfFame() {
         body: JSON.stringify({ tier }),
       });
 
-      const data = await response.json();
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        const text = await response.text();
+        console.error('Non-JSON response from create-checkout:', text);
+        throw new Error(text || 'Unexpected response');
+      }
 
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
@@ -151,6 +158,9 @@ export default function HallOfFame() {
           toast.error(data.error);
           setCheckoutLoading(false);
         }
+      } else {
+        toast.error('Failed to create checkout. Please try again.');
+        setCheckoutLoading(false);
       }
     } catch (error) {
       console.error('Error creating checkout:', error);

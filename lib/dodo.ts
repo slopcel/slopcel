@@ -69,19 +69,25 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
     returnUrl,
   });
   
-  const response = await client.checkoutSessions.create({
-    product_cart: [
-      {
-        product_id: productId,
-        quantity: 1,
+  let response;
+  try {
+    response = await client.checkoutSessions.create({
+      product_cart: [
+        {
+          product_id: productId,
+          quantity: 1,
+        },
+      ],
+      return_url: returnUrl,
+      metadata: sessionMetadata,
+      customization: {
+        theme: 'dark',
       },
-    ],
-    return_url: returnUrl,
-    metadata: sessionMetadata,
-    customization: {
-      theme: 'dark',
-    },
-  });
+    });
+  } catch (err: any) {
+    console.error('Dodo checkoutSessions.create error:', err);
+    throw err;
+  }
 
   console.log('Checkout session created:', {
     sessionId: response.session_id,

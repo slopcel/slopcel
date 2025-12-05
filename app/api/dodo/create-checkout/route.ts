@@ -27,6 +27,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fail fast if product IDs are missing
+    const productEnv: Record<string, string | undefined> = {
+      premium: process.env.DODO_PRODUCT_PREMIUM,
+      standard: process.env.DODO_PRODUCT_STANDARD,
+      hall_of_fame: process.env.DODO_PRODUCT_HALL_OF_FAME,
+      bare_minimum: process.env.DODO_PRODUCT_BARE_MINIMUM,
+    };
+    if (!productEnv[tier]) {
+      console.error('Missing product ID for tier:', tier, productEnv);
+      return NextResponse.json(
+        { error: `Product ID not configured for tier ${tier}` },
+        { status: 500 }
+      );
+    }
+
     // Get the current user (optional - allow guest checkout)
     const supabase = await createClient();
     const {
@@ -100,8 +115,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Dodo create checkout error:', error);
+    const message = error?.message || 'Failed to create checkout';
     return NextResponse.json(
-      { error: error.message || 'Failed to create checkout' },
+      { error: message },
       { status: 500 }
     );
   }
