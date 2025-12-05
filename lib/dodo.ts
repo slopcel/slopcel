@@ -86,7 +86,11 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
     });
   } catch (err: any) {
     console.error('Dodo checkoutSessions.create error:', err);
-    throw err;
+    // Re-throw a clean error message for the API layer
+    const message = err?.message || 'Failed to create Dodo checkout session';
+    const code = err?.code || err?.name || 'DODO_CHECKOUT_ERROR';
+    const details = typeof err === 'string' ? err : JSON.stringify(err, null, 2);
+    throw new Error(`${code}: ${message} ${details}`);
   }
 
   console.log('Checkout session created:', {

@@ -27,6 +27,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Ensure required env vars
+    if (!process.env.DODO_PAYMENTS_API_KEY) {
+      console.error('Missing DODO_PAYMENTS_API_KEY');
+      return NextResponse.json(
+        { error: 'Payment configuration is missing. Please contact support.' },
+        { status: 500 }
+      );
+    }
+
     // Fail fast if product IDs are missing
     const productEnv: Record<string, string | undefined> = {
       premium: process.env.DODO_PRODUCT_PREMIUM,
@@ -79,16 +88,26 @@ export async function POST(request: NextRequest) {
 
     // Create Dodo Payments checkout session
     const origin = request.nextUrl.origin;
-    const checkoutResult = await createCheckoutSession({
-      tier: tierType,
-      userId: user?.id,
-      // Dodo will append session_id as a query parameter automatically
-      returnUrl: `${origin}/payment-success`,
-      metadata: {
-        tier_name: tierInfo.name,
-        tier_description: tierInfo.description,
-      },
-    });
+    let checkoutResult;
+    try {
+      checkoutResult = await createCheckoutSession({
+        tier: tierType,
+        userId: user?.id,
+        // Dodo will append session_id as a query parameter automatically
+        returnUrl: `${origin}/payment-success`,
+        metadata: {
+          tier_name: tierInfo.name,
+          tier_description: tierInfo.description,
+        },
+      });
+    } catch (err: any) {
+      console.error('createCheckoutSession failed:', err);
+      const msg = err?.message || 'Failed to create checkout session';
+      return NextResponse.json(
+        { error: msg, code: err?.code || err?.name || 'CREATE_SESSION_ERROR' },
+        { status: 500 }
+      );
+    }
 
     // Create order record in database for both logged-in and guest users
     // This ensures we can track the order even if webhook fails
@@ -116,8 +135,10 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Dodo create checkout error:', error);
     const message = error?.message || 'Failed to create checkout';
+    const code = error?.code || error?.name || 'INTERNAL_ERROR';
+    const details = typeof error === 'string' ? error : JSON.stringify(error, null, 2);
     return NextResponse.json(
-      { error: message },
+      { error: message, code, details },
       { status: 500 }
     );
   }
