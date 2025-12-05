@@ -8,12 +8,11 @@ import { CheckCircle, Mail, ArrowRight, Loader2, AlertCircle } from 'lucide-reac
 
 function PaymentSuccessContent() {
   const [loading, setLoading] = useState(true);
-  const [capturing, setCapturing] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [captureError, setCaptureError] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -21,14 +20,15 @@ function PaymentSuccessContent() {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const paypalOrderId = searchParams.get('token'); // PayPal returns token param
+  // Dodo Payments uses session_id parameter (with {CHECKOUT_SESSION_ID} placeholder replaced)
+  const sessionId = searchParams.get('session_id');
   const supabase = createClient();
 
   useEffect(() => {
-    initializePayment();
+    checkPaymentStatus();
   }, []);
 
-  const initializePayment = async () => {
+  const checkPaymentStatus = async () => {
     // Check if user is already logged in
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -37,45 +37,126 @@ function PaymentSuccessContent() {
       setCustomerEmail(user.email || null);
     }
     
-    // If we have a PayPal order ID, capture the payment
-    if (paypalOrderId) {
-      setCapturing(true);
+    // If we have a session ID, check the payment status and ensure order exists
+    if (sessionId) {
       try {
-        const captureResponse = await fetch('/api/paypal/capture-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: paypalOrderId }),
-        });
+        const response = await fetch(`/api/dodo/session-info?session_id=${encodeURIComponent(sessionId)}`);
 
-        if (captureResponse.ok) {
-          const captureData = await captureResponse.json();
-          setPaymentComplete(true);
+        if (response.ok) {
+          const data = await response.json();
           
-          if (captureData.email) {
-            setCustomerEmail(captureData.email);
-            setEmail(captureData.email);
-          }
-          
-          // If user is logged in, try to link orders
-          if (user) {
+          // Check if payment succeeded
+          if (data.status === 'succeeded') {
+            // Ensure order exists (fallback if webhook hasn't run)
             try {
-              await fetch('/api/orders/link-by-email', { method: 'POST' });
+              const createOrderResponse = await fetch('/api/dodo/create-order-from-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId }),
+              });
+              
+              if (createOrderResponse.ok) {
+                console.log('Order created/verified from session');
+              }
             } catch (e) {
-              console.error('Error linking orders:', e);
+              console.error('Error ensuring order exists:', e);
+            }
+            
+            setPaymentComplete(true);
+            
+            if (data.customerEmail) {
+              setCustomerEmail(data.customerEmail);
+              setEmail(data.customerEmail);
+            }
+            
+            // If user is logged in, try to link orders
+            if (user) {
+              try {
+                await fetch('/api/orders/link-by-email', { method: 'POST' });
+              } catch (e) {
+                console.error('Error linking orders:', e);
+              }
+            }
+          } else if (data.status === 'failed' || data.status === 'cancelled') {
+            setPaymentError('Payment was not completed. Please try again.');
+          } else if (data.status === 'processing') {
+            // Payment is still processing - this is common
+            setPaymentComplete(true);
+            if (data.customerEmail) {
+              setCustomerEmail(data.customerEmail);
+              setEmail(data.customerEmail);
+            }
+          } else {
+            // Other statuses - assume payment is pending/in progress
+            setPaymentComplete(true);
+            if (data.customerEmail) {
+              setCustomerEmail(data.customerEmail);
+              setEmail(data.customerEmail);
             }
           }
         } else {
-          const errorData = await captureResponse.json();
-          setCaptureError(errorData.error || 'Payment capture failed');
+          // If we can't get session info (404, etc), try to create order anyway
+          // This handles cases where session info isn't available but payment succeeded
+          try {
+            const createOrderResponse = await fetch('/api/dodo/create-order-from-session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sessionId }),
+            });
+            
+            if (createOrderResponse.ok) {
+              const orderData = await createOrderResponse.json();
+              if (orderData.order?.payer_email) {
+                setCustomerEmail(orderData.order.payer_email);
+                setEmail(orderData.order.payer_email);
+              }
+              console.log('Order created from session (fallback)');
+            }
+          } catch (e) {
+            console.error('Error creating order from session:', e);
+          }
+          
+          console.warn('Could not fetch session info, assuming payment succeeded');
+          setPaymentComplete(true);
         }
       } catch (e) {
-        console.error('Error capturing payment:', e);
-        setCaptureError('Failed to process payment. Please contact support.');
+        console.error('Error checking payment status:', e);
+        // Try to create order anyway as fallback
+        try {
+          await fetch('/api/dodo/create-order-from-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId }),
+          });
+        } catch (createError) {
+          console.error('Error creating order fallback:', createError);
+        }
+        setPaymentComplete(true);
       }
-      setCapturing(false);
     } else {
-      // No order ID - maybe user navigated directly here
-      setPaymentComplete(true); // Assume they completed payment elsewhere
+      // No session ID - maybe user navigated directly here or webhook already processed
+      // Check if there's a recent order for this user
+      if (user) {
+        try {
+          const { data: recentOrders } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (recentOrders && recentOrders.length > 0) {
+            const recentOrder = recentOrders[0];
+            if (recentOrder.status === 'completed') {
+              setPaymentComplete(true);
+            }
+          }
+        } catch (e) {
+          console.error('Error checking recent orders:', e);
+        }
+      }
+      
+      setPaymentComplete(true);
     }
     
     setLoading(false);
@@ -156,19 +237,17 @@ function PaymentSuccessContent() {
   };
 
   // Loading state
-  if (loading || capturing) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-black text-[#f8f8f8] flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#d4a017] mb-4" />
-        <p className="text-gray-400">
-          {capturing ? 'Processing your payment...' : 'Loading...'}
-        </p>
+        <p className="text-gray-400">Verifying your payment...</p>
       </div>
     );
   }
 
-  // Capture error state
-  if (captureError) {
+  // Payment error state
+  if (paymentError) {
     return (
       <div className="min-h-screen bg-black text-[#f8f8f8] flex items-center justify-center px-6">
         <div className="max-w-md w-full text-center">
@@ -179,7 +258,7 @@ function PaymentSuccessContent() {
           </div>
           
           <h1 className="text-3xl font-bold text-white mb-4">Payment Issue</h1>
-          <p className="text-gray-400 mb-8">{captureError}</p>
+          <p className="text-gray-400 mb-8">{paymentError}</p>
 
           <div className="flex flex-col gap-4">
             <Link href="/#pricing" className="btn-primary inline-flex items-center justify-center gap-2">

@@ -132,7 +132,7 @@ export default function HallOfFame() {
   const handleCheckout = async (tier: 'premium' | 'standard' | 'hall_of_fame' | 'bare_minimum') => {
     setCheckoutLoading(true);
     try {
-      const response = await fetch('/api/paypal/create-order', {
+      const response = await fetch('/api/dodo/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,8 +142,8 @@ export default function HallOfFame() {
 
       const data = await response.json();
 
-      if (data.approvalUrl) {
-        window.location.href = data.approvalUrl;
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
       } else if (data.error) {
         if (data.requiresAuth) {
           window.location.href = '/login';
@@ -153,8 +153,8 @@ export default function HallOfFame() {
         }
       }
     } catch (error) {
-      console.error('Error creating PayPal order:', error);
-      toast.error('Failed to create order. Please try again.');
+      console.error('Error creating checkout:', error);
+      toast.error('Failed to create checkout. Please try again.');
       setCheckoutLoading(false);
     }
   };

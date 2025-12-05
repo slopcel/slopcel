@@ -8,7 +8,8 @@ import { toast } from 'sonner';
 interface OrderWithUser {
   id: string;
   user_id: string | null;
-  paypal_order_id: string | null;
+  dodo_payment_id: string | null;
+  dodo_session_id: string | null;
   payer_email: string | null;
   amount: number;
   status: 'pending' | 'completed' | 'failed';
@@ -248,7 +249,7 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onProjectCre
                   <span>{order.user_email}</span>
                 </div>
               ) : order.payer_email ? (
-                <span>{order.payer_email} <span className="text-gray-500 text-xs">(PayPal)</span></span>
+                <span>{order.payer_email}</span>
               ) : order.user_id ? (
                 <span className="text-gray-500 font-mono text-sm">User ID: {order.user_id}</span>
               ) : (
@@ -285,21 +286,21 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onProjectCre
             </div>
           </div>
 
-          {/* PayPal Order ID */}
-          {order.paypal_order_id && (
+          {/* Dodo Payment ID */}
+          {order.dodo_payment_id && (
             <div className="bg-[#141414] rounded-lg p-4">
-              <div className="text-gray-400 text-sm mb-2">PayPal Payment</div>
+              <div className="text-gray-400 text-sm mb-2">Dodo Payment</div>
               <div className="flex items-center gap-2">
                 <code className="text-white bg-black/30 px-2 py-1 rounded text-sm font-mono">
-                  {order.paypal_order_id}
+                  {order.dodo_payment_id}
                 </code>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(order.paypal_order_id!);
-                    toast.success('PayPal Order ID copied!');
+                    navigator.clipboard.writeText(order.dodo_payment_id!);
+                    toast.success('Payment ID copied!');
                   }}
                   className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
-                  title="Copy PayPal Order ID"
+                  title="Copy Payment ID"
                 >
                   <Copy size={14} />
                 </button>

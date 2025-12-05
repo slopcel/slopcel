@@ -132,7 +132,8 @@ export interface Database {
         Row: {
           id: string
           user_id: string | null
-          paypal_order_id: string | null
+          dodo_payment_id: string | null
+          dodo_session_id: string | null
           payer_email: string | null
           amount: number
           status: 'pending' | 'completed' | 'failed'
@@ -145,7 +146,8 @@ export interface Database {
         Insert: {
           id?: string
           user_id?: string | null
-          paypal_order_id?: string | null
+          dodo_payment_id?: string | null
+          dodo_session_id?: string | null
           payer_email?: string | null
           amount: number
           status?: 'pending' | 'completed' | 'failed'
@@ -158,7 +160,8 @@ export interface Database {
         Update: {
           id?: string
           user_id?: string | null
-          paypal_order_id?: string | null
+          dodo_payment_id?: string | null
+          dodo_session_id?: string | null
           payer_email?: string | null
           amount?: number
           status?: 'pending' | 'completed' | 'failed'

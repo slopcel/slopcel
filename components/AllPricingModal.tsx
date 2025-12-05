@@ -145,7 +145,7 @@ export default function AllPricingModal({
   const handleCheckout = async (tier: TierData) => {
     setLoading(tier.tier);
     try {
-      const response = await fetch('/api/paypal/create-order', {
+      const response = await fetch('/api/dodo/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,8 +155,8 @@ export default function AllPricingModal({
 
       const data = await response.json();
 
-      if (data.approvalUrl) {
-        window.location.href = data.approvalUrl;
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
       } else if (data.error) {
         if (data.requiresAuth) {
           window.location.href = '/login';
@@ -166,8 +166,8 @@ export default function AllPricingModal({
         }
       }
     } catch (error) {
-      console.error('Error creating PayPal order:', error);
-      toast.error('Failed to create order. Please try again.');
+      console.error('Error creating checkout:', error);
+      toast.error('Failed to create checkout. Please try again.');
       setLoading(null);
     }
   };
