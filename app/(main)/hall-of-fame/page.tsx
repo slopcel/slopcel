@@ -140,11 +140,13 @@ export default function HallOfFame() {
         body: JSON.stringify({ tier }),
       });
 
+      // Read body as text first, then parse as JSON
+      const text = await response.text();
       let data: any = null;
+      
       try {
-        data = await response.json();
+        data = JSON.parse(text);
       } catch (jsonErr) {
-        const text = await response.text();
         console.error('Non-JSON response from create-checkout:', text);
         toast.error('Unable to connect to payment service. Please try again.');
         setCheckoutLoading(false);
