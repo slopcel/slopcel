@@ -146,25 +146,44 @@ export default function HallOfFame() {
       } catch (jsonErr) {
         const text = await response.text();
         console.error('Non-JSON response from create-checkout:', text);
-        throw new Error(text || 'Unexpected response');
+        toast.error('Unable to connect to payment service. Please try again.');
+        setCheckoutLoading(false);
+        return;
       }
 
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else if (data.error) {
-        if (data.requiresAuth) {
-          window.location.href = '/login';
-        } else {
-          toast.error(data.error);
-          setCheckoutLoading(false);
+        // Log detailed error info for debugging
+        console.error('Checkout error:', {
+          code: data.code,
+          error: data.error,
+          details: data.details,
+          tier: data.tier,
+        });
+        
+        // Show user-friendly error message
+        toast.error(data.error, {
+          duration: 5000,
+          description: data.code === 'TIER_SOLD_OUT' 
+            ? 'Check other tiers for availability.' 
+            : data.code === 'RATE_LIMITED'
+            ? 'Please wait a moment before trying again.'
+            : undefined,
+        });
+        setCheckoutLoading(false);
+        
+        // Refresh availability if tier sold out
+        if (data.code === 'TIER_SOLD_OUT') {
+          checkAvailability();
         }
       } else {
         toast.error('Failed to create checkout. Please try again.');
         setCheckoutLoading(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating checkout:', error);
-      toast.error('Failed to create checkout. Please try again.');
+      toast.error(error?.message || 'Connection error. Please check your internet and try again.');
       setCheckoutLoading(false);
     }
   };
