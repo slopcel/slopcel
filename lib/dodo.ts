@@ -27,7 +27,8 @@ export function getDodoClient() {
   
   return new DodoPayments({
     bearerToken: process.env.DODO_PAYMENTS_API_KEY,
-    webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_KEY || null,
+    // webhookKey must be undefined (not null) if not set
+    webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_KEY || undefined,
     environment: isTestMode ? 'test_mode' : 'live_mode',
   });
 }

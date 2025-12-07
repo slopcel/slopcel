@@ -78,9 +78,13 @@ export async function POST(request: NextRequest) {
         const userIdFromMetadata = metadata.user_id;
         const tier = metadata.tier as TierType;
         const emailFromPayment = payment.customer?.email;
+        // checkout_session_id is available on Payment type
+        const checkoutSessionId = payment.checkout_session_id;
+        
         console.log('User resolution inputs:', {
           userIdFromMetadata,
           emailFromPayment,
+          checkoutSessionId,
         });
         const resolvedUserId = userIdFromMetadata && userIdFromMetadata !== 'guest'
           ? userIdFromMetadata
@@ -92,6 +96,7 @@ export async function POST(request: NextRequest) {
         
         console.log('Processing payment:', {
           payment_id: payment.payment_id,
+          checkout_session_id: checkoutSessionId,
           userIdFromMetadata,
           resolvedUserId,
           tier,
@@ -106,44 +111,52 @@ export async function POST(request: NextRequest) {
           .eq('dodo_payment_id', payment.payment_id)
           .maybeSingle();
 
-        // Also try to find by session_id if we can get it from the payment
-        // The payment might have a checkout_session_id field, or we can look it up
+        // Also try to find by session_id from the payment's checkout_session_id
         let existingOrder: any = existingOrderByPayment;
         
-        if (!existingOrder) {
-          // Try to find order by looking up the checkout session from the payment
-          // First, try to get the checkout session ID from payment metadata or related data
-          try {
-            // If payment has a checkout_session_id field, use it
-            const sessionId = (payment as any).checkout_session_id;
-            if (sessionId) {
-              const { data: existingOrderBySession } = await (supabase
-                .from('orders') as any)
-                .select('*')
-                .eq('dodo_session_id', sessionId)
-                .maybeSingle();
-              
-              if (existingOrderBySession) {
-                existingOrder = existingOrderBySession;
-              }
-            }
-          } catch (e) {
-            console.error('Error looking up order by session:', e);
+        if (!existingOrder && checkoutSessionId) {
+          console.log('Looking up order by checkout_session_id:', checkoutSessionId);
+          const { data: existingOrderBySession } = await (supabase
+            .from('orders') as any)
+            .select('*')
+            .eq('dodo_session_id', checkoutSessionId)
+            .maybeSingle();
+          
+          if (existingOrderBySession) {
+            existingOrder = existingOrderBySession;
+            console.log('Found existing order by session_id:', existingOrderBySession.id);
           }
         }
 
         if (existingOrder?.id) {
           // Update existing order to completed
           console.log('Updating existing order:', existingOrder.id);
+          
+          // Build update data - only update hall_of_fame_position if not already set
+          const updateData: any = {
+            dodo_payment_id: payment.payment_id,
+            status: 'completed',
+            payer_email: payment.customer?.email || existingOrder.payer_email || null,
+            // Link the order to the user if we have a valid userId and it's not already set
+            user_id: existingOrder.user_id || resolvedUserId || null,
+          };
+          
+          // Assign hall of fame position if not already assigned
+          if (!existingOrder.hall_of_fame_position && tier && tier !== 'bare_minimum') {
+            const { data: nextPosition, error: positionError } = await (supabase as any)
+              .rpc('get_next_hall_of_fame_position', { amount_cents: amount });
+
+            if (positionError) {
+              console.error('Error getting next position:', positionError);
+            } else if (nextPosition) {
+              updateData.hall_of_fame_position = nextPosition;
+              console.log('Assigned hall of fame position:', nextPosition);
+            }
+          }
+          
           const { error: updateError } = await (supabase
             .from('orders') as any)
-            .update({
-              dodo_payment_id: payment.payment_id,
-              status: 'completed',
-              payer_email: payment.customer?.email || existingOrder.payer_email || null,
-              // Link the order to the user if we have a valid userId and it's not already set
-              user_id: existingOrder.user_id || resolvedUserId || null,
-            })
+            .update(updateData)
             .eq('id', existingOrder.id);
 
           if (updateError) {
@@ -153,9 +166,10 @@ export async function POST(request: NextRequest) {
           }
         } else {
           // Create new order for guest checkout or if order wasn't pre-created
-          console.log('Creating new order');
+          console.log('Creating new order (no existing order found)');
           const orderData: any = {
             dodo_payment_id: payment.payment_id,
+            dodo_session_id: checkoutSessionId || null,
             amount: amount,
             status: 'completed',
             payer_email: payment.customer?.email,

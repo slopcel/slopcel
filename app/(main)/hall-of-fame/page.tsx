@@ -140,12 +140,11 @@ export default function HallOfFame() {
         body: JSON.stringify({ tier }),
       });
 
-      // Read body once to avoid "body stream already read" errors
-      const text = await response.text();
       let data: any = null;
       try {
-        data = text ? JSON.parse(text) : null;
+        data = await response.json();
       } catch (jsonErr) {
+        const text = await response.text();
         console.error('Non-JSON response from create-checkout:', text);
         throw new Error(text || 'Unexpected response');
       }

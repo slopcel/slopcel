@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
     // Get checkout session status
     const session = await getCheckoutSessionStatus(sessionId);
     
+    console.log('Session info response:', JSON.stringify(session, null, 2));
+    
     // If there's a payment ID, get payment details
     let paymentDetails = null;
     if (session.payment_id) {
@@ -39,9 +41,29 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Map payment_status to a simpler status for the frontend
+    // CheckoutSessionStatus.payment_status uses IntentStatus enum
+    const paymentStatus = session.payment_status;
+    let status: string;
+    
+    // Normalize status for frontend
+    if (paymentStatus === 'succeeded') {
+      status = 'succeeded';
+    } else if (paymentStatus === 'failed' || paymentStatus === 'cancelled') {
+      status = paymentStatus;
+    } else if (paymentStatus === 'processing' || paymentStatus === 'requires_capture') {
+      status = 'processing';
+    } else if (paymentStatus === null || paymentStatus === undefined) {
+      // No payment yet - session is still collecting details
+      status = 'pending';
+    } else {
+      status = paymentStatus;
+    }
+
     return NextResponse.json({
       sessionId: session.id,
-      status: session.payment_status,
+      status: status,
+      paymentStatus: session.payment_status, // Raw status for debugging
       paymentId: session.payment_id,
       customerEmail: session.customer_email,
       customerName: session.customer_name,

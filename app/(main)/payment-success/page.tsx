@@ -20,7 +20,10 @@ function PaymentSuccessContent() {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Dodo Payments uses session_id parameter (with {CHECKOUT_SESSION_ID} placeholder replaced)
+  // Dodo Payments redirects with payment_id and status params
+  const paymentId = searchParams.get('payment_id');
+  const paymentStatus = searchParams.get('status');
+  // Also check for session_id as fallback
   const sessionId = searchParams.get('session_id');
   const supabase = createClient();
 
@@ -36,17 +39,83 @@ function PaymentSuccessContent() {
       setIsLoggedIn(true);
       setCustomerEmail(user.email || null);
     }
+
+    console.log('Payment success params:', { paymentId, paymentStatus, sessionId });
     
-    // If we have a session ID, check the payment status and ensure order exists
+    // If we have a payment_id from Dodo redirect, use it to complete the order
+    if (paymentId) {
+      console.log('Processing payment_id:', paymentId, 'status:', paymentStatus);
+      
+      // Check if payment was reported as failed/cancelled in URL
+      if (paymentStatus === 'failed' || paymentStatus === 'cancelled') {
+        setPaymentError('Payment was not completed. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      // Payment succeeded (or status=succeeded) - complete the order
+      try {
+        const response = await fetch('/api/dodo/complete-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentId }),
+        });
+        
+        const data = await response.json();
+        console.log('Complete order response:', data);
+        
+        if (response.ok && data.success) {
+          setPaymentComplete(true);
+          
+          // Set email from order
+          if (data.order?.payer_email) {
+            setCustomerEmail(data.order.payer_email);
+            setEmail(data.order.payer_email);
+          }
+          
+          // If user is logged in, try to link orders
+          if (user) {
+            try {
+              await fetch('/api/orders/link-by-email', { method: 'POST' });
+            } catch (e) {
+              console.error('Error linking orders:', e);
+            }
+          }
+        } else {
+          // API call failed but payment might have succeeded
+          // Show success anyway since Dodo confirmed payment
+          console.warn('Complete order API failed:', data.error);
+          if (paymentStatus === 'succeeded') {
+            setPaymentComplete(true);
+          } else {
+            setPaymentError(data.error || 'Failed to process payment');
+          }
+        }
+      } catch (e) {
+        console.error('Error completing order:', e);
+        // If status was succeeded, show success anyway
+        if (paymentStatus === 'succeeded') {
+          setPaymentComplete(true);
+        } else {
+          setPaymentError('Failed to verify payment. Please contact support.');
+        }
+      }
+      
+      setLoading(false);
+      return;
+    }
+    
+    // If we have a session ID (fallback), check the payment status
     if (sessionId) {
       try {
         const response = await fetch(`/api/dodo/session-info?session_id=${encodeURIComponent(sessionId)}`);
 
         if (response.ok) {
           const data = await response.json();
+          console.log('Session info:', data);
           
-          // Check if payment succeeded
-          if (data.status === 'succeeded') {
+          // Check if payment succeeded or is processing
+          if (data.status === 'succeeded' || data.status === 'processing') {
             // Ensure order exists (fallback if webhook hasn't run)
             try {
               const createOrderResponse = await fetch('/api/dodo/create-order-from-session', {
@@ -56,7 +125,17 @@ function PaymentSuccessContent() {
               });
               
               if (createOrderResponse.ok) {
-                console.log('Order created/verified from session');
+                const orderData = await createOrderResponse.json();
+                console.log('Order created/verified from session:', orderData);
+                
+                // Use email from order if available
+                if (orderData.order?.payer_email) {
+                  setCustomerEmail(orderData.order.payer_email);
+                  setEmail(orderData.order.payer_email);
+                }
+              } else {
+                const errorData = await createOrderResponse.json().catch(() => ({}));
+                console.log('Order creation response:', errorData);
               }
             } catch (e) {
               console.error('Error ensuring order exists:', e);
@@ -64,7 +143,8 @@ function PaymentSuccessContent() {
             
             setPaymentComplete(true);
             
-            if (data.customerEmail) {
+            // Set email from session if not already set from order
+            if (!customerEmail && data.customerEmail) {
               setCustomerEmail(data.customerEmail);
               setEmail(data.customerEmail);
             }
@@ -79,86 +159,55 @@ function PaymentSuccessContent() {
             }
           } else if (data.status === 'failed' || data.status === 'cancelled') {
             setPaymentError('Payment was not completed. Please try again.');
-          } else if (data.status === 'processing') {
-            // Payment is still processing - this is common
-            setPaymentComplete(true);
-            if (data.customerEmail) {
-              setCustomerEmail(data.customerEmail);
-              setEmail(data.customerEmail);
-            }
+          } else if (data.status === 'pending') {
+            // Payment hasn't started yet - user might have arrived here without completing
+            setPaymentError('Payment was not completed. Please try again.');
           } else {
-            // Other statuses - assume payment is pending/in progress
+            // Unknown status - try to create order anyway
+            console.log('Unknown payment status:', data.status);
             setPaymentComplete(true);
+            
             if (data.customerEmail) {
               setCustomerEmail(data.customerEmail);
               setEmail(data.customerEmail);
             }
           }
         } else {
-          // If we can't get session info (404, etc), try to create order anyway
-          // This handles cases where session info isn't available but payment succeeded
-          try {
-            const createOrderResponse = await fetch('/api/dodo/create-order-from-session', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ sessionId }),
-            });
-            
-            if (createOrderResponse.ok) {
-              const orderData = await createOrderResponse.json();
-              if (orderData.order?.payer_email) {
-                setCustomerEmail(orderData.order.payer_email);
-                setEmail(orderData.order.payer_email);
-              }
-              console.log('Order created from session (fallback)');
-            }
-          } catch (e) {
-            console.error('Error creating order from session:', e);
-          }
-          
-          console.warn('Could not fetch session info, assuming payment succeeded');
+          console.warn('Could not fetch session info');
           setPaymentComplete(true);
         }
       } catch (e) {
         console.error('Error checking payment status:', e);
-        // Try to create order anyway as fallback
-        try {
-          await fetch('/api/dodo/create-order-from-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId }),
-          });
-        } catch (createError) {
-          console.error('Error creating order fallback:', createError);
-        }
         setPaymentComplete(true);
       }
-    } else {
-      // No session ID - maybe user navigated directly here or webhook already processed
-      // Check if there's a recent order for this user
-      if (user) {
-        try {
-          const { data: recentOrders } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1);
-          
-          if (recentOrders && recentOrders.length > 0) {
-            const recentOrder = recentOrders[0];
-            if (recentOrder.status === 'completed') {
-              setPaymentComplete(true);
-            }
-          }
-        } catch (e) {
-          console.error('Error checking recent orders:', e);
-        }
-      }
       
-      setPaymentComplete(true);
+      setLoading(false);
+      return;
     }
     
+    // No payment_id or session_id - check if there's a recent order for this user
+    if (user) {
+      try {
+        const { data: recentOrders } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (recentOrders && recentOrders.length > 0) {
+          const recentOrder = recentOrders[0];
+          if (recentOrder.status === 'completed') {
+            setPaymentComplete(true);
+          }
+        }
+      } catch (e) {
+        console.error('Error checking recent orders:', e);
+      }
+    }
+    
+    // Show success page anyway (user might have navigated here directly)
+    setPaymentComplete(true);
     setLoading(false);
   };
 
@@ -446,3 +495,4 @@ export default function PaymentSuccess() {
     </Suspense>
   );
 }
+

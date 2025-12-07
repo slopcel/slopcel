@@ -65,52 +65,115 @@ export async function POST(request: NextRequest) {
       .eq('dodo_session_id', sessionId)
       .maybeSingle();
 
+    // Get checkout session status first to get payment info
+    let session;
+    try {
+      session = await getCheckoutSessionStatus(sessionId);
+      console.log('Session status:', JSON.stringify(session, null, 2));
+    } catch (e) {
+      console.error('Error fetching session status:', e);
+      // If we have an existing order, return it even if we can't get session status
+      if (existingOrder) {
+        return NextResponse.json({ 
+          success: true, 
+          order: existingOrder,
+          message: 'Order exists, could not verify session' 
+        });
+      }
+      return NextResponse.json(
+        { error: 'Could not verify payment session' },
+        { status: 400 }
+      );
+    }
+
     if (existingOrder) {
       // Order already exists, check if it needs updating
-      if (existingOrder.status === 'pending' && existingOrder.dodo_payment_id) {
-        // Try to get payment status
-        try {
-          const payment = await getPayment(existingOrder.dodo_payment_id);
-          if (payment.status === 'succeeded') {
-            await (supabase
-              .from('orders') as any)
-              .update({ status: 'completed' })
-              .eq('id', existingOrder.id);
+      const needsUpdate = existingOrder.status === 'pending';
+      
+      if (needsUpdate) {
+        // Try to get payment status from session or payment_id
+        const paymentId = session?.payment_id || existingOrder.dodo_payment_id;
+        if (paymentId) {
+          try {
+            const payment = await getPayment(paymentId);
+            console.log('Payment status check:', payment.status);
+            
+            if (payment.status === 'succeeded') {
+              // Get metadata for tier
+              const metadata = payment.metadata || {};
+              const tier = metadata.tier as TierType;
+              const amount = tier ? TIER_AMOUNTS[tier] : payment.total_amount || 0;
+              
+              const updateData: any = { 
+                status: 'completed',
+                dodo_payment_id: paymentId,
+                payer_email: payment.customer?.email || existingOrder.payer_email,
+              };
+              
+              // Assign hall of fame position if not already assigned
+              if (!existingOrder.hall_of_fame_position && tier && tier !== 'bare_minimum') {
+                const { data: nextPosition, error: positionError } = await (supabase as any)
+                  .rpc('get_next_hall_of_fame_position', { amount_cents: amount });
+
+                if (!positionError && nextPosition) {
+                  updateData.hall_of_fame_position = nextPosition;
+                }
+              }
+              
+              // Link to user if not already linked
+              if (!existingOrder.user_id && loggedInUserId) {
+                updateData.user_id = loggedInUserId;
+              }
+              
+              await (supabase
+                .from('orders') as any)
+                .update(updateData)
+                .eq('id', existingOrder.id);
+                
+              console.log('Updated existing order to completed:', existingOrder.id);
+            }
+          } catch (e) {
+            console.error('Error checking payment status:', e);
           }
-        } catch (e) {
-          console.error('Error checking payment status:', e);
         }
-      }
-      // If order exists but has no user and we have a logged-in user, link it
-      if (!existingOrder.user_id && loggedInUserId) {
+      } else if (!existingOrder.user_id && loggedInUserId) {
+        // Just link the user if needed
         await (supabase.from('orders') as any)
           .update({ user_id: loggedInUserId })
           .eq('id', existingOrder.id);
       }
 
+      // Refetch to get updated data
+      const { data: updatedOrder } = await (supabase
+        .from('orders') as any)
+        .select('*')
+        .eq('id', existingOrder.id)
+        .single();
+
       return NextResponse.json({ 
         success: true, 
-        order: existingOrder,
+        order: updatedOrder || existingOrder,
         message: 'Order already exists' 
       });
     }
 
-    // Get checkout session status
-    const session = await getCheckoutSessionStatus(sessionId);
-    
+    // No existing order - check if payment is complete
     if (!session.payment_id) {
+      // Session exists but payment not started yet
+      console.log('No payment_id in session yet');
       return NextResponse.json(
-        { error: 'Payment not completed yet' },
+        { error: 'Payment not completed yet', sessionStatus: session.payment_status },
         { status: 400 }
       );
     }
 
     // Get payment details
     const payment = await getPayment(session.payment_id);
+    console.log('Payment details:', JSON.stringify(payment, null, 2));
     
     if (payment.status !== 'succeeded') {
       return NextResponse.json(
-        { error: 'Payment not succeeded' },
+        { error: 'Payment not succeeded', paymentStatus: payment.status },
         { status: 400 }
       );
     }
