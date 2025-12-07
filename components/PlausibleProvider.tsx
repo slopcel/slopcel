@@ -1,13 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
+import { initPlausible } from '@/lib/plausible';
 
 export default function PlausibleProvider() {
   useEffect(() => {
-    // Dynamically import to ensure it only runs on client
-    import('@/lib/plausible').then(() => {
-      console.log('Plausible analytics initialized');
-    });
+    initPlausible();
   }, []);
 
   return null;
