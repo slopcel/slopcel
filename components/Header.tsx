@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Menu, X, LayoutDashboard } from 'lucide-react';
 import { links } from '@/constants';
 import { createClient } from '@/lib/supabase/client';
@@ -13,6 +13,8 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const supabase = useMemo(() => createClient(), []);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const onScroll = () => setPinned(window.scrollY > 40);
@@ -20,6 +22,24 @@ export default function Header() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuOpen &&
+        menuRef.current &&
+        menuButtonRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        !menuButtonRef.current.contains(event.target as Node)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -99,6 +119,7 @@ export default function Header() {
         </div>
 
         <button
+          ref={menuButtonRef}
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           className="md:hidden text-gray-300 hover:text-white"
           onClick={() => setMenuOpen(v => !v)}
@@ -108,7 +129,7 @@ export default function Header() {
       </nav>
 
       {menuOpen && (
-        <div className="fixed left-1/2 -translate-x-1/2 z-40 mt-2 w-[94%] max-w-[640px]" style={{ top: pinned ? 72 : 88 }}>
+        <div ref={menuRef} className="fixed left-1/2 -translate-x-1/2 z-40 mt-2 w-[94%] max-w-[640px]" style={{ top: pinned ? 72 : 88 }}>
           <div className="rounded-2xl border border-white/10 bg-black/80 backdrop-blur-lg p-2 shadow-2xl text-gray-300">
             {isLoggedIn && (
               <Link href={isAdmin ? '/admin' : '/dashboard'} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">

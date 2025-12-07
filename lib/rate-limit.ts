@@ -1,6 +1,9 @@
 /**
  * Simple in-memory rate limiter
  * For production with multiple server instances, consider using Upstash Redis
+ * 
+ * NOTE: No setInterval at global scope - Cloudflare Workers don't allow it
+ * Cleanup happens during rate limit checks instead
  */
 
 interface RateLimitEntry {
@@ -9,16 +12,21 @@ interface RateLimitEntry {
 }
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
+let lastCleanup = 0;
 
-// Clean up expired entries periodically
-setInterval(() => {
+// Clean up expired entries (called during rate limit checks, not at global scope)
+function cleanupExpiredEntries() {
   const now = Date.now();
+  // Only cleanup once per minute
+  if (now - lastCleanup < 60000) return;
+  lastCleanup = now;
+  
   for (const [key, entry] of rateLimitStore.entries()) {
     if (now > entry.resetTime) {
       rateLimitStore.delete(key);
     }
   }
-}, 60000); // Clean up every minute
+}
 
 export interface RateLimitConfig {
   /** Maximum number of requests allowed in the window */
@@ -44,6 +52,9 @@ export function rateLimit(
   identifier: string,
   config: RateLimitConfig
 ): RateLimitResult {
+  // Cleanup expired entries periodically (inside handler, not global scope)
+  cleanupExpiredEntries();
+  
   const now = Date.now();
   const windowMs = config.windowInSeconds * 1000;
   const key = identifier;
@@ -125,4 +136,3 @@ export const rateLimitConfigs = {
   // Relaxed: 100 requests per minute (for read-heavy endpoints)
   relaxed: { limit: 100, windowInSeconds: 60 },
 };
-
