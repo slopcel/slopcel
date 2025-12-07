@@ -147,8 +147,25 @@ export default function HallOfFame() {
       try {
         data = JSON.parse(text);
       } catch (jsonErr) {
-        console.error('Non-JSON response from create-checkout:', text);
-        toast.error('Unable to connect to payment service. Please try again.');
+        console.error('Non-JSON response from create-checkout:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: text.substring(0, 500), // First 500 chars
+        });
+        // Show more helpful error based on status
+        if (response.status === 500) {
+          toast.error('Server error. Check console for details.', {
+            description: text.substring(0, 100),
+            duration: 10000,
+          });
+        } else if (response.status === 404) {
+          toast.error('Payment endpoint not found. Please contact support.');
+        } else {
+          toast.error(`Payment service error (${response.status})`, {
+            description: text.substring(0, 100),
+            duration: 10000,
+          });
+        }
         setCheckoutLoading(false);
         return;
       }

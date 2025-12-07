@@ -24,9 +24,21 @@ export type TierType = 'premium' | 'standard' | 'hall_of_fame' | 'bare_minimum';
 // Uses DODO_PAYMENTS_API_KEY environment variable by default
 export function getDodoClient() {
   const isTestMode = process.env.DODO_PAYMENTS_MODE !== 'live';
+  const apiKey = process.env.DODO_PAYMENTS_API_KEY;
+  
+  console.log('Dodo client config:', {
+    mode: isTestMode ? 'test_mode' : 'live_mode',
+    hasApiKey: !!apiKey,
+    apiKeyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : 'MISSING',
+    DODO_PAYMENTS_MODE: process.env.DODO_PAYMENTS_MODE || 'not set (defaults to test)',
+  });
+  
+  if (!apiKey) {
+    throw new Error('DODO_PAYMENTS_API_KEY is not configured');
+  }
   
   return new DodoPayments({
-    bearerToken: process.env.DODO_PAYMENTS_API_KEY,
+    bearerToken: apiKey,
     // webhookKey must be undefined (not null) if not set
     webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_KEY || undefined,
     environment: isTestMode ? 'test_mode' : 'live_mode',
