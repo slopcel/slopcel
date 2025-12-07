@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { PlausibleEvents } from '@/lib/plausible';
 
 interface AllPricingModalProps {
   isOpen: boolean;
@@ -184,6 +185,8 @@ export default function AllPricingModal({
       }
 
       if (data.checkoutUrl) {
+        // Track checkout started
+        PlausibleEvents.checkoutStarted(tier);
         window.location.href = data.checkoutUrl;
       } else if (data.error) {
         // Log detailed error info for debugging

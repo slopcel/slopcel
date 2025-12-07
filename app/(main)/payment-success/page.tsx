@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, Mail, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { PlausibleEvents } from '@/lib/plausible';
 
 function PaymentSuccessContent() {
   const [loading, setLoading] = useState(true);
@@ -66,6 +67,14 @@ function PaymentSuccessContent() {
         
         if (response.ok && data.success) {
           setPaymentComplete(true);
+          
+          // Track checkout completed
+          if (data.order?.amount) {
+            PlausibleEvents.checkoutCompleted(
+              data.order.hall_of_fame_position ? 'hall_of_fame' : 'bare_minimum',
+              data.order.amount / 100 // Convert cents to dollars
+            );
+          }
           
           // Set email from order
           if (data.order?.payer_email) {
@@ -248,6 +257,9 @@ function PaymentSuccessContent() {
       }
 
       if (data.user) {
+        // Track sign up
+        PlausibleEvents.signUp();
+        
         await fetch('/api/orders/link-by-email', { method: 'POST' });
         
         if (data.session) {
@@ -280,6 +292,9 @@ function PaymentSuccessContent() {
       return;
     }
 
+    // Track sign in
+    PlausibleEvents.signIn();
+    
     await fetch('/api/orders/link-by-email', { method: 'POST' });
     router.push('/dashboard');
     router.refresh();

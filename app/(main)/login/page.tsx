@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { PlausibleEvents } from '@/lib/plausible';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -32,6 +33,8 @@ export default function Login() {
         setError(error.message);
         setLoading(false);
       } else {
+        // Track sign up
+        PlausibleEvents.signUp();
         setError('Check your email to confirm your account!');
         setLoading(false);
       }
@@ -45,6 +48,8 @@ export default function Login() {
         setError(error.message);
         setLoading(false);
       } else {
+        // Track sign in
+        PlausibleEvents.signIn();
         router.push('/dashboard');
         router.refresh();
       }

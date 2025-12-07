@@ -7,6 +7,7 @@ import Link from 'next/link';
 import PricingModal from '@/components/PricingModal';
 import { User } from 'lucide-react';
 import { toast } from 'sonner';
+import { PlausibleEvents } from '@/lib/plausible';
 
 interface UserProfile {
   display_name: string | null;
@@ -171,6 +172,8 @@ export default function HallOfFame() {
       }
 
       if (data.checkoutUrl) {
+        // Track checkout started
+        PlausibleEvents.checkoutStarted(tier);
         window.location.href = data.checkoutUrl;
       } else if (data.error) {
         // Log detailed error info for debugging

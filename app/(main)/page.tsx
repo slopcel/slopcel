@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import ProjectDetailModal from '@/components/ProjectDetailModal';
+import { PlausibleEvents } from '@/lib/plausible';
 
 interface ProjectProfile {
   display_name: string | null;
@@ -170,6 +171,8 @@ export default function Home() {
       }
 
       if (data.checkoutUrl) {
+        // Track checkout started
+        PlausibleEvents.checkoutStarted(tier);
         window.location.href = data.checkoutUrl;
       } else if (data.error) {
         // Log detailed error info for debugging
