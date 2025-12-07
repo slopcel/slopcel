@@ -186,7 +186,7 @@ export default function AllPricingModal({
 
       if (data.checkoutUrl) {
         // Track checkout started
-        PlausibleEvents.checkoutStarted(tier);
+        PlausibleEvents.checkoutStarted(tier.tier);
         window.location.href = data.checkoutUrl;
       } else if (data.error) {
         // Log detailed error info for debugging

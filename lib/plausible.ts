@@ -1,29 +1,37 @@
-import { init, track } from '@plausible-analytics/tracker';
-
 // Flag to track initialization status
 let isInitialized = false;
 
-// Initialize Plausible tracker
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
+// Initialize Plausible tracker (only runs in browser)
 export function initPlausible() {
-  if (isInitialized) return;
+  if (!isBrowser || isInitialized) return;
   
-  init({
-    domain: 'slopcel.com',
-    // Uncomment below if you're using a custom endpoint
-    // endpoint: 'https://your-plausible-instance.com/api/event',
-    autoCapturePageviews: true,
-    captureOnLocalhost: false,
+  // Dynamic import to avoid SSR issues
+  import('@plausible-analytics/tracker').then(({ init }) => {
+    init({
+      domain: 'slopcel.com',
+      // Uncomment below if you're using a custom endpoint
+      // endpoint: 'https://your-plausible-instance.com/api/event',
+      autoCapturePageviews: true,
+      captureOnLocalhost: false,
+    });
+    
+    isInitialized = true;
+    console.log('Plausible analytics initialized');
+  }).catch((err) => {
+    console.error('Failed to initialize Plausible:', err);
   });
-  
-  isInitialized = true;
-  console.log('Plausible analytics initialized');
 }
 
-// Helper function for tracking custom events
+// Helper function for tracking custom events (only runs in browser)
 export function trackEvent(
   eventName: string,
   props?: Record<string, string | number | boolean>
 ) {
+  if (!isBrowser) return;
+  
   // Convert number/boolean values to strings for Plausible
   const stringProps: Record<string, string> | undefined = props
     ? Object.fromEntries(
@@ -31,7 +39,12 @@ export function trackEvent(
       )
     : undefined;
 
-  track(eventName, { props: stringProps });
+  // Dynamic import to avoid SSR issues
+  import('@plausible-analytics/tracker').then(({ track }) => {
+    track(eventName, { props: stringProps });
+  }).catch((err) => {
+    console.error('Failed to track event:', err);
+  });
 }
 
 // Common event helpers
