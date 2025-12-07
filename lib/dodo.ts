@@ -1,16 +1,8 @@
 // Dodo Payments helper functions
-import DodoPayments from 'dodopayments';
+// NOTE: We use dynamic import to avoid Cloudflare Workers "global scope" errors
+// The SDK must not be imported at module level as it does async operations on load
 
-// Product IDs from Dodo Payments dashboard
-// You need to create these products in your Dodo dashboard first
-export const DODO_PRODUCT_IDS = {
-  premium: process.env.DODO_PRODUCT_PREMIUM || '', // $300 - Position #1
-  standard: process.env.DODO_PRODUCT_STANDARD || '', // $150 - Positions 2-10
-  hall_of_fame: process.env.DODO_PRODUCT_HALL_OF_FAME || '', // $75 - Positions 11-100
-  bare_minimum: process.env.DODO_PRODUCT_BARE_MINIMUM || '', // $50 - No Hall of Fame
-};
-
-// Tier amounts in cents
+// Tier amounts in cents (static data, safe at module level)
 export const TIER_AMOUNTS = {
   premium: 30000, // $300
   standard: 15000, // $150
@@ -20,9 +12,30 @@ export const TIER_AMOUNTS = {
 
 export type TierType = 'premium' | 'standard' | 'hall_of_fame' | 'bare_minimum';
 
-// Create Dodo Payments client
+// Get product IDs from environment (called inside handlers, not at module scope)
+export function getProductIds() {
+  return {
+    premium: process.env.DODO_PRODUCT_PREMIUM || '',
+    standard: process.env.DODO_PRODUCT_STANDARD || '',
+    hall_of_fame: process.env.DODO_PRODUCT_HALL_OF_FAME || '',
+    bare_minimum: process.env.DODO_PRODUCT_BARE_MINIMUM || '',
+  };
+}
+
+// For backwards compatibility
+export const DODO_PRODUCT_IDS = {
+  get premium() { return process.env.DODO_PRODUCT_PREMIUM || ''; },
+  get standard() { return process.env.DODO_PRODUCT_STANDARD || ''; },
+  get hall_of_fame() { return process.env.DODO_PRODUCT_HALL_OF_FAME || ''; },
+  get bare_minimum() { return process.env.DODO_PRODUCT_BARE_MINIMUM || ''; },
+};
+
+// Create Dodo Payments client - uses dynamic import to avoid global scope issues
 // Uses DODO_PAYMENTS_API_KEY environment variable by default
-export function getDodoClient() {
+export async function getDodoClient() {
+  // Dynamic import - only loads the SDK when this function is called inside a handler
+  const { default: DodoPayments } = await import('dodopayments');
+  
   const isTestMode = process.env.DODO_PAYMENTS_MODE !== 'live';
   const apiKey = process.env.DODO_PAYMENTS_API_KEY;
   
@@ -60,13 +73,14 @@ export interface CheckoutResult {
 export async function createCheckoutSession(params: CreateCheckoutParams): Promise<CheckoutResult> {
   const { tier, userId, returnUrl, metadata = {} } = params;
   
-  const productId = DODO_PRODUCT_IDS[tier];
+  const productIds = getProductIds();
+  const productId = productIds[tier];
   
   if (!productId) {
     throw new Error(`Product ID not configured for tier: ${tier}. Please set DODO_PRODUCT_${tier.toUpperCase()} in your environment variables.`);
   }
 
-  const client = getDodoClient();
+  const client = await getDodoClient();
   
   // Build metadata with all required fields
   const sessionMetadata: Record<string, string> = {
@@ -118,23 +132,23 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
 }
 
 export async function getCheckoutSessionStatus(sessionId: string) {
-  const client = getDodoClient();
+  const client = await getDodoClient();
   return client.checkoutSessions.retrieve(sessionId);
 }
 
 export async function getPayment(paymentId: string) {
-  const client = getDodoClient();
+  const client = await getDodoClient();
   return client.payments.retrieve(paymentId);
 }
 
 // Verify and parse webhook payload
 // Returns the parsed webhook event if valid, throws if invalid
-export function verifyAndParseWebhook(
+export async function verifyAndParseWebhook(
   payload: string,
   headers: Record<string, string>,
   webhookKey?: string
 ) {
-  const client = getDodoClient();
+  const client = await getDodoClient();
   
   // The SDK uses standardwebhooks to verify the signature
   return client.webhooks.unwrap(payload, {
@@ -144,8 +158,8 @@ export function verifyAndParseWebhook(
 }
 
 // Unsafe version that skips signature verification (use only in development)
-export function parseWebhookUnsafe(payload: string) {
-  const client = getDodoClient();
+export async function parseWebhookUnsafe(payload: string) {
+  const client = await getDodoClient();
   return client.webhooks.unsafeUnwrap(payload);
 }
 

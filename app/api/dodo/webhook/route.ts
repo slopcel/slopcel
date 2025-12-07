@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     
     // Try to verify signature, fall back to unsafe parsing in dev
     try {
-      event = verifyAndParseWebhook(payload, headers);
+      event = await verifyAndParseWebhook(payload, headers);
       console.log('Webhook signature verified successfully');
     } catch (signatureError) {
       console.warn('Webhook signature verification failed:', signatureError);
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       // In development, allow unsigned webhooks
       if (process.env.NODE_ENV === 'development' || !process.env.DODO_PAYMENTS_WEBHOOK_KEY) {
         console.warn('Using unsafe webhook parsing (dev mode or no webhook key)');
-        event = parseWebhookUnsafe(payload);
+        event = await parseWebhookUnsafe(payload);
       } else {
         console.error('Webhook signature verification failed in production');
         return NextResponse.json(
