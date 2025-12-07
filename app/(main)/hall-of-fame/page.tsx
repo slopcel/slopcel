@@ -325,7 +325,7 @@ export default function HallOfFame() {
             {/* Placeholder Wall */}
             <div className="flex justify-center">
               <div className="cursor-pointer" onClick={() => handleCardClick(1)}>
-                <div className="relative w-full md:w-[820px] h-[220px] rounded-xl border-4 border-dashed border-yellow-400 grid place-items-center hover:border-yellow-300 transition-colors">
+                <div className="relative w-full min-w-[260px] md:w-[820px] h-[220px] rounded-xl border-4 border-dashed border-yellow-400 grid place-items-center hover:border-yellow-300 transition-colors">
                   <div className="text-5xl font-extrabold text-yellow-400">$300</div>
                 </div>
               </div>
@@ -372,7 +372,7 @@ export default function HallOfFame() {
                 </div>
               ) : (
                 <div className="cursor-pointer" onClick={() => handleCardClick(1)}>
-                  <div className="relative w-full md:w-[820px] h-[220px] rounded-xl border-4 border-dashed border-yellow-400 grid place-items-center hover:border-yellow-300 transition-colors">
+                  <div className="relative w-full min-w-[260px] md:w-[820px] h-[220px] rounded-xl border-4 border-dashed border-yellow-400 grid place-items-center hover:border-yellow-300 transition-colors">
                     <div className="text-5xl font-extrabold text-yellow-400">$300</div>
                   </div>
                   <div className="mt-2 text-center text-3xl font-bold text-yellow-400">1</div>
