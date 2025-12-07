@@ -40,47 +40,53 @@ function errorResponse(
 }
 
 export async function POST(request: NextRequest) {
-  // Rate limit: 5 requests per minute for checkout
-  const ip = getClientIP(request);
-  const rateLimitResult = rateLimit(`checkout:${ip}`, rateLimitConfigs.strict);
+  console.log('[Checkout] Request received');
   
-  if (!rateLimitResult.success) {
-    return errorResponse(
-      'Too many requests. Please wait a moment and try again.',
-      'RATE_LIMITED',
-      429,
-      `Rate limit exceeded for IP`,
-      undefined,
-      rateLimitHeaders(rateLimitResult)
-    );
-  }
-
-  let tier: string | undefined;
-  
+  // Wrap everything in try-catch to catch any unexpected errors
   try {
-    const body = await request.json();
-    tier = body.tier;
-  } catch (e) {
-    return errorResponse(
-      'Invalid request body',
-      'INVALID_TIER',
-      400,
-      'Could not parse JSON body'
-    );
-  }
+    // Rate limit: 5 requests per minute for checkout
+    const ip = getClientIP(request);
+    const rateLimitResult = rateLimit(`checkout:${ip}`, rateLimitConfigs.strict);
+    
+    if (!rateLimitResult.success) {
+      return errorResponse(
+        'Too many requests. Please wait a moment and try again.',
+        'RATE_LIMITED',
+        429,
+        `Rate limit exceeded for IP`,
+        undefined,
+        rateLimitHeaders(rateLimitResult)
+      );
+    }
 
-  if (!tier || !['premium', 'standard', 'hall_of_fame', 'bare_minimum'].includes(tier)) {
-    return errorResponse(
-      'Please select a valid pricing tier',
-      'INVALID_TIER',
-      400,
-      `Received tier: ${tier}`
-    );
-  }
+    let tier: string | undefined;
+    
+    try {
+      const body = await request.json();
+      tier = body.tier;
+      console.log('[Checkout] Parsed tier:', tier);
+    } catch (e: any) {
+      return errorResponse(
+        'Invalid request body',
+        'INVALID_TIER',
+        400,
+        `Could not parse JSON body: ${e?.message}`
+      );
+    }
 
-  try {
-    // Ensure required env vars
-    if (!process.env.DODO_PAYMENTS_API_KEY) {
+    if (!tier || !['premium', 'standard', 'hall_of_fame', 'bare_minimum'].includes(tier)) {
+      return errorResponse(
+        'Please select a valid pricing tier',
+        'INVALID_TIER',
+        400,
+        `Received tier: ${tier}`
+      );
+    }
+
+    // Check env vars early
+    console.log('[Checkout] Checking env vars...');
+    const apiKey = process.env.DODO_PAYMENTS_API_KEY;
+    if (!apiKey) {
       return errorResponse(
         'Payment system is not configured. Please contact support.',
         'MISSING_API_KEY',
@@ -88,6 +94,7 @@ export async function POST(request: NextRequest) {
         'DODO_PAYMENTS_API_KEY environment variable is missing'
       );
     }
+    console.log('[Checkout] API key present:', apiKey.substring(0, 8) + '...');
 
     // Fail fast if product IDs are missing
     const productEnv: Record<string, string | undefined> = {
@@ -96,6 +103,13 @@ export async function POST(request: NextRequest) {
       hall_of_fame: process.env.DODO_PRODUCT_HALL_OF_FAME,
       bare_minimum: process.env.DODO_PRODUCT_BARE_MINIMUM,
     };
+    
+    console.log('[Checkout] Product IDs:', {
+      premium: productEnv.premium ? 'set' : 'MISSING',
+      standard: productEnv.standard ? 'set' : 'MISSING',
+      hall_of_fame: productEnv.hall_of_fame ? 'set' : 'MISSING',
+      bare_minimum: productEnv.bare_minimum ? 'set' : 'MISSING',
+    });
     
     if (!productEnv[tier]) {
       const tierNames: Record<string, string> = {
@@ -114,40 +128,77 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the current user (optional - allow guest checkout)
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    console.log('create-checkout user:', user ? { id: user.id, email: user.email } : null);
+    console.log('[Checkout] Creating Supabase client...');
+    let supabase;
+    try {
+      supabase = await createClient();
+    } catch (e: any) {
+      return errorResponse(
+        'Database connection failed. Please try again.',
+        'INTERNAL_ERROR',
+        500,
+        `Supabase client error: ${e?.message}`
+      );
+    }
+    
+    console.log('[Checkout] Getting user...');
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('[Checkout] User:', user ? { id: user.id, email: user.email } : 'guest');
+    
     // Use service role for inserts to avoid RLS issues for guests
-    const supabaseAdmin = await createServiceRoleClient();
+    console.log('[Checkout] Creating admin client...');
+    let supabaseAdmin;
+    try {
+      supabaseAdmin = await createServiceRoleClient();
+    } catch (e: any) {
+      return errorResponse(
+        'Database admin connection failed. Please try again.',
+        'INTERNAL_ERROR',
+        500,
+        `Supabase admin client error: ${e?.message}`
+      );
+    }
 
     const tierType = tier as TierType;
     const tierInfo = getTierInfo(tierType);
     const amount = TIER_AMOUNTS[tierType];
+    console.log('[Checkout] Tier info:', { tierType, amount });
 
     // Check hall of fame availability for hall of fame tiers
+    console.log('[Checkout] Checking availability for tier:', tier);
     if (tier === 'premium' || tier === 'standard' || tier === 'hall_of_fame') {
-      const { data: isAvailable, error: availabilityError } = await supabase
-        .rpc('check_tier_availability', { amount_cents: amount });
-      
-      if (availabilityError) {
+      try {
+        const { data: isAvailable, error: availabilityError } = await supabase
+          .rpc('check_tier_availability', { amount_cents: amount });
+        
+        console.log('[Checkout] Availability check result:', { isAvailable, error: availabilityError });
+        
+        if (availabilityError) {
+          return errorResponse(
+            'Unable to check tier availability. Please try again.',
+            'AVAILABILITY_CHECK_FAILED',
+            500,
+            availabilityError.message,
+            tier
+          );
+        }
+        
+        if (!isAvailable) {
+          const tierLabel = tier === 'premium' ? 'Premium ($300)' : tier === 'standard' ? 'Standard ($150)' : 'Hall of Fame ($75)';
+          return errorResponse(
+            `All spots for the ${tierLabel} tier are currently taken. Please choose a different tier.`,
+            'TIER_SOLD_OUT',
+            400,
+            `No positions available for tier: ${tier}`,
+            tier
+          );
+        }
+      } catch (e: any) {
         return errorResponse(
           'Unable to check tier availability. Please try again.',
           'AVAILABILITY_CHECK_FAILED',
           500,
-          availabilityError.message,
-          tier
-        );
-      }
-      
-      if (!isAvailable) {
-        const tierLabel = tier === 'premium' ? 'Premium ($300)' : tier === 'standard' ? 'Standard ($150)' : 'Hall of Fame ($75)';
-        return errorResponse(
-          `All spots for the ${tierLabel} tier are currently taken. Please choose a different tier.`,
-          'TIER_SOLD_OUT',
-          400,
-          `No positions available for tier: ${tier}`,
+          `RPC error: ${e?.message}`,
           tier
         );
       }
@@ -155,7 +206,7 @@ export async function POST(request: NextRequest) {
 
     // Create Dodo Payments checkout session
     const origin = request.nextUrl.origin;
-    console.log('Creating Dodo checkout session for tier:', tier, 'origin:', origin);
+    console.log('[Checkout] Creating Dodo session, origin:', origin);
     
     let checkoutResult;
     try {
@@ -169,8 +220,9 @@ export async function POST(request: NextRequest) {
           tier_description: tierInfo.description,
         },
       });
+      console.log('[Checkout] Dodo session created:', checkoutResult.sessionId);
     } catch (err: any) {
-      console.error('createCheckoutSession failed:', err);
+      console.error('[Checkout] createCheckoutSession failed:', err);
       
       // Parse Dodo API error for more helpful message
       let userMessage = 'Unable to initialize payment. Please try again.';
@@ -197,43 +249,46 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order record in database for both logged-in and guest users
-    // This ensures we can track the order even if webhook fails
-    const { data: newOrder, error: insertError } = await (supabaseAdmin.from('orders') as any)
-      .insert({
-        user_id: user?.id || null,
-        dodo_session_id: checkoutResult.sessionId,
-        amount: amount,
-        status: 'pending',
-      })
-      .select()
-      .single();
+    console.log('[Checkout] Creating initial order...');
+    try {
+      const { data: newOrder, error: insertError } = await (supabaseAdmin.from('orders') as any)
+        .insert({
+          user_id: user?.id || null,
+          dodo_session_id: checkoutResult.sessionId,
+          amount: amount,
+          status: 'pending',
+        })
+        .select()
+        .single();
 
-    if (insertError) {
-      console.error('Error creating initial order:', insertError);
-      // Log but don't fail - checkout session is created, webhook/fallback will handle order
-    } else {
-      console.log('Initial order created:', newOrder?.id);
+      if (insertError) {
+        console.error('[Checkout] Order insert error:', insertError);
+        // Log but don't fail - checkout session is created, webhook/fallback will handle order
+      } else {
+        console.log('[Checkout] Order created:', newOrder?.id);
+      }
+    } catch (e: any) {
+      console.error('[Checkout] Order creation exception:', e);
+      // Don't fail the checkout
     }
 
-    console.log('Checkout session created successfully:', {
-      sessionId: checkoutResult.sessionId,
-      tier,
-    });
-
+    console.log('[Checkout] Success! Returning checkout URL');
     return NextResponse.json({ 
       success: true,
       sessionId: checkoutResult.sessionId, 
       checkoutUrl: checkoutResult.checkoutUrl,
     });
+    
   } catch (error: any) {
-    console.error('Unexpected checkout error:', error);
+    console.error('[Checkout] FATAL ERROR:', error);
+    console.error('[Checkout] Error stack:', error?.stack);
     
     return errorResponse(
       'An unexpected error occurred. Please try again or contact support.',
       'INTERNAL_ERROR',
       500,
-      error?.message || String(error),
-      tier
+      `${error?.name}: ${error?.message}`,
+      undefined
     );
   }
 }

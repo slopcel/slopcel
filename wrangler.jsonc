@@ -7,6 +7,10 @@
   "main": ".open-next/worker.js",
   "name": "slopcel",
   "compatibility_date": "2024-12-30",
+  // Non-secret environment variables (secrets should use wrangler secret put)
+  "vars": {
+    "DODO_PAYMENTS_MODE": "test"
+  },
   "compatibility_flags": [
     // Enable Node.js API
     // see https://developers.cloudflare.com/workers/configuration/compatibility-flags/#nodejs-compatibility-flag
