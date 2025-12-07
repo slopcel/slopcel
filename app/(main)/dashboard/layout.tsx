@@ -1,20 +1,18 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import type { Metadata } from "next";
 
-export default async function DashboardLayout({
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "Manage your Slopcel orders and projects from your personal dashboard.",
+  robots: {
+    index: false, // Don't index user dashboards
+    follow: false,
+  },
+};
+
+export default function DashboardPageLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  return <>{children}</>;
+  return children;
 }
-

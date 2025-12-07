@@ -1,0 +1,15 @@
+# Slopcel Robots.txt
+User-agent: *
+Allow: /
+
+# Disallow private/admin areas
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /login
+Disallow: /payment-success
+Disallow: /unauthorized
+
+# Sitemap location
+Sitemap: https://slopcel.com/sitemap.xml
+
