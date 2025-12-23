@@ -506,7 +506,7 @@ export default function Home() {
           {[
             { q: 'What is Slopcel?', a: 'A parody hosting platform for vibecoded slop—projects are built and deployed manually by me.' },
             { q: 'Can I submit an idea?', a: 'Yes. Pay a fee or rally interest on Twitter; if I like it, I will build and deploy.' },
-            { q: 'Will my app be online forever?', a: 'No guarantees. This is for fun—expect experiments and occasional chaos.' },
+            { q: 'Will my app be online forever?', a: 'Yes. Especially if you pay for the Hall of Fame.' },
           ].map((item, i) => {
             const isOpen = faqOpenIndex === i;
             return (

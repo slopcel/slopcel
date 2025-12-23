@@ -37,7 +37,7 @@ export default async function BlogPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-              The <span className="text-[#d4a017]">Slopcel</span> Blog
+              The Slopcel Blog
             </h1>
             <p className="text-lg sm:text-xl text-gray-400">
               Insights, tutorials, and updates from the world of AI-powered app deployment
@@ -51,7 +51,6 @@ export default async function BlogPage() {
         <div className="container mx-auto px-4">
           {!posts || posts.length === 0 ? (
             <div className="max-w-xl mx-auto text-center py-16">
-              <div className="text-6xl mb-4">📝</div>
               <h2 className="text-2xl font-bold text-white mb-2">No posts yet</h2>
               <p className="text-gray-400">
                 We&apos;re working on some great content. Check back soon!
