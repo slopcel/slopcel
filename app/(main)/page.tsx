@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Plus, ArrowRight, User } from 'lucide-react';
+import { Plus, ArrowRight, User, Calendar, Clock } from 'lucide-react';
 import Footer from '@/components/Footer';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -30,6 +30,17 @@ interface FeaturedProject {
   profile?: ProjectProfile | null;
 }
 
+interface FeaturedBlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  thumbnail_url: string | null;
+  published_at: string | null;
+  created_at: string;
+  content: string;
+}
+
 export default function Home() {
   useEffect(() => {
     // Easter egg console log
@@ -41,6 +52,7 @@ export default function Home() {
   const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [featuredProjects, setFeaturedProjects] = useState<FeaturedProject[]>([]);
+  const [featuredBlogPosts, setFeaturedBlogPosts] = useState<FeaturedBlogPost[]>([]);
   const [selectedProject, setSelectedProject] = useState<FeaturedProject | null>(null);
   const [availability, setAvailability] = useState<{
     premium: boolean | null;
@@ -55,6 +67,7 @@ export default function Home() {
   useEffect(() => {
     checkAvailability();
     fetchFeaturedProjects();
+    fetchFeaturedBlogPosts();
   }, []);
 
   const fetchFeaturedProjects = async () => {
@@ -103,8 +116,38 @@ export default function Home() {
         profile: project.user_id ? profilesMap[project.user_id] || null : null,
       }));
 
+      console.log(projects)
+
       setFeaturedProjects(projectsWithProfiles);
     }
+  };
+
+  const fetchFeaturedBlogPosts = async () => {
+    const supabase = createClient();
+    
+    // Fetch featured and published blog posts (limit to 3 for homepage)
+    const { data: posts, error } = await supabase
+      .from('blog_posts')
+      .select('id, title, slug, excerpt, thumbnail_url, published_at, created_at, content')
+      .eq('published', true)
+      .eq('featured', true)
+      .order('published_at', { ascending: false })
+      .limit(3);
+
+    if (error) {
+      console.error('Error fetching blog posts:', error);
+      return;
+    }
+
+    if (posts) {
+      setFeaturedBlogPosts(posts);
+    }
+  };
+
+  const estimateReadingTime = (content: string): number => {
+    const wordsPerMinute = 200;
+    const wordCount = content.split(/\s+/).length;
+    return Math.ceil(wordCount / wordsPerMinute);
   };
 
   const checkAvailability = async () => {
@@ -488,6 +531,92 @@ export default function Home() {
           })}
         </div>
       </section>
+
+      {/* Blog Section */}
+      {featuredBlogPosts.length > 0 && (
+        <section className="py-20 px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col text-center sm:flex-row sm:items-end sm:justify-center gap-4 mb-10">
+              <div>
+                <h2 className="text-4xl font-bold text-white mb-2">From the Blog</h2>
+                <p className="text-gray-400">Latest updates, tutorials, and insights</p>
+              </div>
+              
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredBlogPosts.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/blog/${post.slug}`}
+                  className="group bg-[#0d0d0d] border border-gray-800 rounded-xl overflow-hidden hover:border-[#d4a017]/50 transition-all duration-300 hover:-translate-y-1"
+                >
+                  {/* Thumbnail */}
+                  <div className="relative h-40 overflow-hidden">
+                    {post.thumbnail_url ? (
+                      <img
+                        src={post.thumbnail_url}
+                        alt={post.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-[#d4a017]/20 to-[#d4a017]/5 flex items-center justify-center">
+                        <span className="text-4xl opacity-50">📝</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-5">
+                    {/* Meta */}
+                    <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
+                      <span className="flex items-center gap-1">
+                        <Calendar size={12} />
+                        {new Date(post.published_at || post.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={12} />
+                        {estimateReadingTime(post.content)} min
+                      </span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="font-bold text-white mb-2 group-hover:text-[#d4a017] transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
+
+                    {/* Excerpt */}
+                    {post.excerpt && (
+                      <p className="text-gray-400 text-sm line-clamp-2 mb-3">
+                        {post.excerpt}
+                      </p>
+                    )}
+
+                    {/* Read More */}
+                    <span className="text-[#d4a017] text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+                      Read more
+                      <ArrowRight size={14} />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="text-center flex justify-center mt-10">
+              <Link
+                  href="/blog"
+                  className="text-white hover:text-[#e5b030] flex items-center gap-2 font-medium group"
+                >
+                  View all posts
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Project Detail Modal */}
       <ProjectDetailModal

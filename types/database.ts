@@ -172,6 +172,47 @@ export interface Database {
           created_at?: string
         }
       }
+      blog_posts: {
+        Row: {
+          id: string
+          title: string
+          slug: string
+          excerpt: string | null
+          content: string
+          thumbnail_url: string | null
+          published: boolean
+          featured: boolean
+          published_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          slug: string
+          excerpt?: string | null
+          content: string
+          thumbnail_url?: string | null
+          published?: boolean
+          featured?: boolean
+          published_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          slug?: string
+          excerpt?: string | null
+          content?: string
+          thumbnail_url?: string | null
+          published?: boolean
+          featured?: boolean
+          published_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
@@ -181,4 +222,5 @@ export type Idea = Database['public']['Tables']['ideas']['Row']
 export type Category = Database['public']['Tables']['categories']['Row']
 export type Order = Database['public']['Tables']['orders']['Row']
 export type Profile = Database['public']['Tables']['profiles']['Row']
+export type BlogPost = Database['public']['Tables']['blog_posts']['Row']
 

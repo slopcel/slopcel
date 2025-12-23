@@ -242,28 +242,29 @@ export default function AdminIdeas() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         <div className="text-gray-400">Loading ideas...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Ideas</h1>
-          <p className="text-gray-400">Manage your project ideas and categories</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Ideas</h1>
+          <p className="text-gray-400 text-sm sm:text-base">Manage your project ideas and categories</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
           <button
             onClick={() => {
               resetCategoryForm();
               setShowCategoryForm(true);
             }}
-            className="btn-secondary flex items-center gap-2"
+            className="btn-secondary flex items-center justify-center gap-2 text-sm sm:text-base"
           >
-            <Plus size={20} />
+            <Plus size={18} />
             Add Category
           </button>
           <button
@@ -271,24 +272,24 @@ export default function AdminIdeas() {
               resetIdeaForm();
               setShowIdeaForm(true);
             }}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary flex items-center justify-center gap-2 text-sm sm:text-base"
           >
-            <Plus size={20} />
+            <Plus size={18} />
             Add Idea
           </button>
         </div>
       </div>
 
-      {/* Category Management */}
+      {/* Category Management Form */}
       {showCategoryForm && (
-        <div className="bg-[#0d0d0d] border border-gray-800 rounded-lg p-6 mb-8">
+        <div className="bg-[#0d0d0d] border border-gray-800 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-lg sm:text-xl font-bold text-white">
               {editingCategory ? 'Edit Category' : 'New Category'}
             </h2>
             <button
               onClick={resetCategoryForm}
-              className="text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-white p-1"
             >
               <X size={20} />
             </button>
@@ -303,14 +304,14 @@ export default function AdminIdeas() {
                 value={categoryFormData.name}
                 onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
                 required
-                className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+                className="w-full px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Color *
               </label>
-              <div className="flex gap-4 items-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
                 <input
                   type="color"
                   value={categoryFormData.color}
@@ -321,19 +322,19 @@ export default function AdminIdeas() {
                   type="text"
                   value={categoryFormData.color}
                   onChange={(e) => setCategoryFormData({ ...categoryFormData, color: e.target.value })}
-                  className="flex-1 px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+                  className="flex-1 px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
                   placeholder="#d4a017"
                 />
               </div>
             </div>
-            <div className="flex gap-4">
-              <button type="submit" className="btn-primary">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <button type="submit" className="btn-primary w-full sm:w-auto">
                 {editingCategory ? 'Update' : 'Create'}
               </button>
               <button
                 type="button"
                 onClick={resetCategoryForm}
-                className="btn-secondary"
+                className="btn-secondary w-full sm:w-auto"
               >
                 Cancel
               </button>
@@ -344,28 +345,28 @@ export default function AdminIdeas() {
 
       {/* Categories List */}
       {categories.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-white mb-3">Categories</h2>
-          <div className="flex flex-wrap gap-3">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-base sm:text-lg font-semibold text-white mb-3">Categories</h2>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {categories.map((category) => (
               <div
                 key={category.id}
-                className="flex items-center gap-2 bg-[#141414] border border-gray-800 rounded-lg px-4 py-2"
+                className="flex items-center gap-2 bg-[#141414] border border-gray-800 rounded-lg px-3 sm:px-4 py-2"
               >
                 <span
-                  className="w-4 h-4 rounded-full"
+                  className="w-3 h-3 sm:w-4 sm:h-4 rounded-full shrink-0"
                   style={{ backgroundColor: category.color }}
                 />
-                <span className="text-white">{category.name}</span>
+                <span className="text-white text-sm sm:text-base">{category.name}</span>
                 <button
                   onClick={() => handleEditCategory(category)}
-                  className="ml-2 text-gray-400 hover:text-white text-sm"
+                  className="ml-1 sm:ml-2 text-gray-400 hover:text-white text-xs sm:text-sm"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => openDeleteModal('category', category.id, category.name)}
-                  className="text-gray-400 hover:text-red-400 text-sm"
+                  className="text-gray-400 hover:text-red-400 text-xs sm:text-sm"
                 >
                   Delete
                 </button>
@@ -377,14 +378,14 @@ export default function AdminIdeas() {
 
       {/* Idea Form */}
       {showIdeaForm && (
-        <div className="bg-[#0d0d0d] border border-gray-800 rounded-lg p-6 mb-8">
+        <div className="bg-[#0d0d0d] border border-gray-800 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-lg sm:text-xl font-bold text-white">
               {editingIdea ? 'Edit Idea' : 'New Idea'}
             </h2>
             <button
               onClick={resetIdeaForm}
-              className="text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-white p-1"
             >
               <X size={20} />
             </button>
@@ -399,7 +400,7 @@ export default function AdminIdeas() {
                 value={ideaFormData.title}
                 onChange={(e) => setIdeaFormData({ ...ideaFormData, title: e.target.value })}
                 required
-                className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+                className="w-full px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
               />
             </div>
             <div>
@@ -410,10 +411,10 @@ export default function AdminIdeas() {
                 value={ideaFormData.description}
                 onChange={(e) => setIdeaFormData({ ...ideaFormData, description: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+                className="w-full px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Emoji
@@ -423,7 +424,7 @@ export default function AdminIdeas() {
                   value={ideaFormData.emoji}
                   onChange={(e) => setIdeaFormData({ ...ideaFormData, emoji: e.target.value })}
                   maxLength={2}
-                  className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+                  className="w-full px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
                   placeholder="🎨"
                 />
               </div>
@@ -434,7 +435,7 @@ export default function AdminIdeas() {
                 <select
                   value={ideaFormData.category_id}
                   onChange={(e) => setIdeaFormData({ ...ideaFormData, category_id: e.target.value })}
-                  className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+                  className="w-full px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
                 >
                   <option value="">No category</option>
                   {categories.map((cat) => (
@@ -452,21 +453,21 @@ export default function AdminIdeas() {
               <select
                 value={ideaFormData.status}
                 onChange={(e) => setIdeaFormData({ ...ideaFormData, status: e.target.value as 'plan_to_do' | 'done' | 'dropped' })}
-                className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+                className="w-full px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
               >
                 <option value="plan_to_do">Plan to do</option>
                 <option value="done">Done</option>
                 <option value="dropped">Dropped</option>
               </select>
             </div>
-            <div className="flex gap-4">
-              <button type="submit" className="btn-primary">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <button type="submit" className="btn-primary w-full sm:w-auto">
                 {editingIdea ? 'Update' : 'Create'}
               </button>
               <button
                 type="button"
                 onClick={resetIdeaForm}
-                className="btn-secondary"
+                className="btn-secondary w-full sm:w-auto"
               >
                 Cancel
               </button>
@@ -476,11 +477,11 @@ export default function AdminIdeas() {
       )}
 
       {/* Filters */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-4 py-2 bg-[#0d0d0d] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+          className="px-3 sm:px-4 py-2 bg-[#0d0d0d] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
         >
           <option value="all">All Categories</option>
           {categories.map((cat) => (
@@ -492,7 +493,7 @@ export default function AdminIdeas() {
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
-          className="px-4 py-2 bg-[#0d0d0d] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+          className="px-3 sm:px-4 py-2 bg-[#0d0d0d] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
         >
           <option value="all">All Statuses</option>
           <option value="plan_to_do">Plan to do</option>
@@ -503,11 +504,11 @@ export default function AdminIdeas() {
 
       {/* Ideas Grid */}
       {filteredIdeas.length === 0 ? (
-        <div className="bg-[#0d0d0d] border border-gray-800 rounded-lg p-12 text-center">
-          <p className="text-gray-400">No ideas found. Create your first idea!</p>
+        <div className="bg-[#0d0d0d] border border-gray-800 rounded-lg p-8 sm:p-12 text-center">
+          <p className="text-gray-400 text-sm sm:text-base">No ideas found. Create your first idea!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {filteredIdeas.map((idea) => (
             <IdeaCard
               key={idea.id}
@@ -538,4 +539,3 @@ export default function AdminIdeas() {
     </div>
   );
 }
-

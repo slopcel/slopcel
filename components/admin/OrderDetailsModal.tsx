@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { X, ExternalLink, User, CreditCard, Calendar, Trophy, Lightbulb, FolderPlus, CheckCircle, RefreshCw, Copy, Bell, Mail } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import ImageUpload from './ImageUpload';
 
 interface OrderWithUser {
   id: string;
@@ -408,18 +409,13 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onProjectCre
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1">
-                    Image URL
-                  </label>
-                  <input
-                    type="url"
-                    value={projectFormData.image_url}
-                    onChange={(e) => setProjectFormData({ ...projectFormData, image_url: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#0d0d0d] border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-[#d4a017]"
-                    placeholder="https://..."
-                  />
-                </div>
+                <ImageUpload
+                  value={projectFormData.image_url}
+                  onChange={(url) => setProjectFormData({ ...projectFormData, image_url: url })}
+                  folder="project-images"
+                  label="Project Image"
+                  aspectRatio="video"
+                />
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -429,9 +425,12 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onProjectCre
                     className="w-4 h-4 rounded border-gray-700 bg-[#0d0d0d] text-[#d4a017] focus:ring-[#d4a017]"
                   />
                   <label htmlFor="featured-modal" className="text-xs text-gray-400">
-                    Featured (Hall of Fame)
+                    Featured on Homepage
                   </label>
                 </div>
+                <p className="text-[10px] text-gray-500 mt-1">
+                  Note: This order will appear on Hall of Fame automatically based on the tier purchased.
+                </p>
                 <div className="flex gap-2">
                   <button
                     onClick={handleCreateProject}

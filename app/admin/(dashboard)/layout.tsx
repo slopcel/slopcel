@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import Sidebar from '@/components/admin/Sidebar';
-import Header from '@/components/Header';
+import AdminLayoutClient from '@/components/admin/AdminLayoutClient';
 
 export const runtime = 'edge';
 
@@ -27,15 +26,8 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-black text-[#f8f8f8]">
-      <Header />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
-      </div>
-    </div>
+    <AdminLayoutClient>
+      {children}
+    </AdminLayoutClient>
   );
 }
-

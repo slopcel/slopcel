@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Project } from '@/types/database';
-import { Plus, Edit, Trash2, Star, StarOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Star, StarOff, ExternalLink, Github } from 'lucide-react';
 import { toast } from 'sonner';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 export default function AdminProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -130,7 +131,7 @@ export default function AdminProjects() {
       toast.error('Error updating featured status');
     } else {
       fetchProjects();
-      toast.success(project.featured ? 'Project unfeatured!' : 'Project featured!');
+      toast.success(project.featured ? 'Removed from homepage!' : 'Featured on homepage!');
     }
   };
 
@@ -149,34 +150,36 @@ export default function AdminProjects() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         <div className="text-gray-400">Loading projects...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Projects</h1>
-          <p className="text-gray-400">Manage your projects and hall of fame</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Projects</h1>
+          <p className="text-gray-400 text-sm sm:text-base">Manage your projects and hall of fame</p>
         </div>
         <button
           onClick={() => {
             resetForm();
             setShowForm(true);
           }}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <Plus size={20} />
           Add Project
         </button>
       </div>
 
+      {/* Form */}
       {showForm && (
-        <div className="bg-[#0d0d0d] border border-gray-800 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">
+        <div className="bg-[#0d0d0d] border border-gray-800 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-bold text-white mb-4">
             {editingProject ? 'Edit Project' : 'New Project'}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -189,7 +192,7 @@ export default function AdminProjects() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+                className="w-full px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
               />
             </div>
             <div>
@@ -200,62 +203,67 @@ export default function AdminProjects() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
+                className="w-full px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
               />
+            </div>
+            {/* Image Upload */}
+            <ImageUpload
+              value={formData.image_url}
+              onChange={(url) => setFormData({ ...formData, image_url: url })}
+              folder="project-images"
+              label="Project Image"
+              aspectRatio="video"
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Live URL
+                </label>
+                <input
+                  type="url"
+                  value={formData.live_url}
+                  onChange={(e) => setFormData({ ...formData, live_url: e.target.value })}
+                  className="w-full px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  GitHub URL
+                </label>
+                <input
+                  type="url"
+                  value={formData.github_url}
+                  onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
+                  className="w-full px-3 sm:px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017] text-sm sm:text-base"
+                />
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Image URL
-              </label>
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="featured"
+                  checked={formData.featured}
+                  onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                  className="w-4 h-4 rounded border-gray-800 bg-[#141414] text-[#d4a017] focus:ring-[#d4a017]"
+                />
+                <label htmlFor="featured" className="text-sm font-medium text-gray-300">
+                  Featured on Homepage
+                </label>
+              </div>
+              <p className="text-xs text-gray-500 mt-1 ml-6">
+                Shows this project in the "Featured Slop" section on the homepage. Does NOT add to Hall of Fame.
+              </p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Live URL
-              </label>
-              <input
-                type="url"
-                value={formData.live_url}
-                onChange={(e) => setFormData({ ...formData, live_url: e.target.value })}
-                className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                GitHub URL
-              </label>
-              <input
-                type="url"
-                value={formData.github_url}
-                onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
-                className="w-full px-4 py-2 bg-[#141414] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#d4a017]"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="featured"
-                checked={formData.featured}
-                onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                className="w-4 h-4 rounded border-gray-800 bg-[#141414] text-[#d4a017] focus:ring-[#d4a017]"
-              />
-              <label htmlFor="featured" className="text-sm font-medium text-gray-300">
-                Featured (Hall of Fame)
-              </label>
-            </div>
-            <div className="flex gap-4">
-              <button type="submit" className="btn-primary">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <button type="submit" className="btn-primary w-full sm:w-auto">
                 {editingProject ? 'Update' : 'Create'}
               </button>
               <button
                 type="button"
                 onClick={resetForm}
-                className="btn-secondary"
+                className="btn-secondary w-full sm:w-auto"
               >
                 Cancel
               </button>
@@ -264,7 +272,89 @@ export default function AdminProjects() {
         </div>
       )}
 
-      <div className="bg-[#0d0d0d] border border-gray-800 rounded-lg overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="block lg:hidden space-y-3">
+        {projects.length === 0 ? (
+          <div className="bg-[#0d0d0d] border border-gray-800 rounded-lg p-8 text-center text-gray-400">
+            No projects yet. Create your first project!
+          </div>
+        ) : (
+          projects.map((project) => (
+            <div
+              key={project.id}
+              className="bg-[#0d0d0d] border border-gray-800 rounded-lg p-4"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-semibold truncate">{project.name}</div>
+                  {project.description && (
+                    <div className="text-gray-400 text-sm mt-1 line-clamp-2">
+                      {project.description}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => toggleFeatured(project)}
+                  className={`p-2 rounded-lg shrink-0 ml-2 ${
+                    project.featured
+                      ? 'text-[#d4a017] bg-[#d4a017]/10'
+                      : 'text-gray-400 hover:text-gray-300'
+                  }`}
+                  title={project.featured ? 'Remove from Homepage' : 'Feature on Homepage'}
+                >
+                  {project.featured ? <Star size={18} /> : <StarOff size={18} />}
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-3 mb-3">
+                {project.live_url && (
+                  <a
+                    href={project.live_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <ExternalLink size={16} />
+                  </a>
+                )}
+                {project.github_url && (
+                  <a
+                    href={project.github_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <Github size={16} />
+                  </a>
+                )}
+                <span className="text-gray-500 text-xs">
+                  {new Date(project.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              
+              <div className="flex gap-2 pt-2 border-t border-gray-800">
+                <button
+                  onClick={() => handleEdit(project)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-400 hover:text-white hover:bg-[#141414] rounded-lg text-sm"
+                >
+                  <Edit size={16} />
+                  Edit
+                </button>
+                <button
+                  onClick={() => openDeleteModal(project)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-400 hover:text-red-400 hover:bg-red-900/10 rounded-lg text-sm"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-[#0d0d0d] border border-gray-800 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#141414] border-b border-gray-800">
@@ -309,7 +399,7 @@ export default function AdminProjects() {
                             ? 'text-[#d4a017] bg-[#d4a017]/10'
                             : 'text-gray-400 hover:text-gray-300'
                         }`}
-                        title={project.featured ? 'Remove from Hall of Fame' : 'Add to Hall of Fame'}
+                        title={project.featured ? 'Remove from Homepage' : 'Feature on Homepage'}
                       >
                         {project.featured ? <Star size={20} /> : <StarOff size={20} />}
                       </button>
@@ -356,4 +446,3 @@ export default function AdminProjects() {
     </div>
   );
 }
-
