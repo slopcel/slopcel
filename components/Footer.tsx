@@ -12,10 +12,10 @@ export default function Footer(){
                 Vercel for Vibecoded Projects
               </p>
               <div className="flex items-center gap-4">
-                <Link href={links["twitter"]} className="p-2 rounded-md border border-gray-800 hover:bg-[#111]">
+                <Link href={links["twitter"]} className="p-2 rounded-md border border-gray-800 hover:bg-[#111]" target="_blank">
                   <img src="/icons/twitter.svg" alt=""/>
                 </Link>
-                <Link href={links["discord"]} className="p-2 rounded-md border border-gray-800 hover:bg-[#111]">
+                <Link href={links["discord"]} className="p-2 rounded-md border border-gray-800 hover:bg-[#111]" target="_blank">
                     <img src="/icons/discord.svg" alt=""/>
                 </Link>
               </div>

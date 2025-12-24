@@ -324,7 +324,7 @@ export default function Home() {
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="text-gray-300">
                     <path d="M18.244 2H21l-6.543 7.48L22 22h-6.828l-4.77-6.223L4.8 22H2l7.028-8.04L2 2h6.828l4.325 5.77L18.244 2Zm-1.197 18h1.887L7.03 4h-1.89l10.906 16Z"/>
                   </svg>
-                  <span className="underline">Follow on X (Twitter)</span>
+                  <span className="underline">Follow on Twitter</span>
                 </Link>
               </p>
             </div>
