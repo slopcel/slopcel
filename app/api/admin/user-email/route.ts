@@ -25,6 +25,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'userId parameter required' }, { status: 400 });
     }
 
+    // Validate UUID format before querying
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      return NextResponse.json({ email: null });
+    }
+
     // Use service role client to fetch user info
     const serviceClient = await createServiceRoleClient();
     const { data: userData, error } = await serviceClient.auth.admin.getUserById(userId);

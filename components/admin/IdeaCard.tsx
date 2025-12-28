@@ -2,6 +2,7 @@
 
 import { Idea, Category } from '@/types/database';
 import { Edit, Trash2 } from 'lucide-react';
+import TweetEmbed, { containsTweetUrl } from './TweetEmbed';
 
 interface IdeaCardProps {
   idea: Idea & { categories?: Category | null };
@@ -11,7 +12,16 @@ interface IdeaCardProps {
   onStatusChange: (idea: Idea, newStatus: 'plan_to_do' | 'done' | 'dropped') => void;
 }
 
+// Remove tweet URL from description for cleaner display
+function getCleanDescription(description: string | null): string | null {
+  if (!description) return null;
+  const urlPattern = /(https?:\/\/(?:twitter\.com|x\.com)\/\w+\/status(?:es)?\/\d+)/gi;
+  return description.replace(urlPattern, '').trim() || null;
+}
+
 export default function IdeaCard({ idea, category, onEdit, onDelete, onStatusChange }: IdeaCardProps) {
+  const tweetUrl = idea.description ? containsTweetUrl(idea.description) : null;
+  const cleanDescription = getCleanDescription(idea.description);
   const statusLabels = {
     plan_to_do: 'Plan to do',
     done: 'Done',
@@ -44,8 +54,11 @@ export default function IdeaCard({ idea, category, onEdit, onDelete, onStatusCha
             <span className="text-2xl mr-2">{idea.emoji}</span>
           )}
           <h3 className="text-lg font-bold text-white mb-2">{idea.title}</h3>
-          {idea.description && (
-            <p className="text-gray-400 text-sm mb-4">{idea.description}</p>
+          {cleanDescription && (
+            <p className="text-gray-400 text-sm mb-2">{cleanDescription}</p>
+          )}
+          {tweetUrl && (
+            <TweetEmbed tweetUrl={tweetUrl} />
           )}
         </div>
         <div className="flex gap-2 ml-4">

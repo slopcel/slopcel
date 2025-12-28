@@ -3,8 +3,10 @@
 import { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Order } from '@/types/database';
-import { Lightbulb, Eye } from 'lucide-react';
+import { Lightbulb, Eye, Trash2 } from 'lucide-react';
 import OrderDetailsModal from '@/components/admin/OrderDetailsModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
+import { toast } from 'sonner';
 
 interface OrderWithUser extends Order {
   user_email?: string;
@@ -15,6 +17,12 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<OrderWithUser | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; orderId: string | null; orderInfo: string }>({
+    isOpen: false,
+    orderId: null,
+    orderInfo: '',
+  });
+  const [deleting, setDeleting] = useState(false);
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
@@ -64,6 +72,36 @@ export default function AdminOrders() {
   const filteredOrders = orders.filter((order) =>
     statusFilter === 'all' || order.status === statusFilter
   );
+
+  const openDeleteModal = (order: OrderWithUser) => {
+    const orderInfo = `${formatAmount(order.amount)} - ${order.user_email || order.payer_email || 'Guest'}`;
+    setDeleteModal({ isOpen: true, orderId: order.id, orderInfo });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, orderId: null, orderInfo: '' });
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!deleteModal.orderId) return;
+    
+    setDeleting(true);
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', deleteModal.orderId);
+
+    if (error) {
+      console.error('Error deleting order:', error);
+      toast.error('Failed to delete order');
+    } else {
+      toast.success('Order deleted successfully');
+      fetchOrders();
+    }
+    
+    setDeleting(false);
+    closeDeleteModal();
+  };
 
   const formatAmount = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
@@ -181,7 +219,7 @@ export default function AdminOrders() {
                 {order.user_email || order.payer_email || (order.user_id ? `User: ${order.user_id.slice(0, 8)}...` : 'Guest')}
               </div>
               
-              <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
                 <div className="text-gray-500 text-xs">
                   {new Date(order.created_at).toLocaleDateString()}
                 </div>
@@ -192,6 +230,16 @@ export default function AdminOrders() {
                   {order.status === 'completed' && !order.project_id && order.idea_description && (
                     <span className="text-orange-400 text-xs">Needs project</span>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDeleteModal(order);
+                    }}
+                    className="p-1 text-gray-400 hover:text-red-400 hover:bg-red-900/10 rounded transition-colors"
+                    title="Delete order"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                   <Eye size={16} className="text-gray-500" />
                 </div>
               </div>
@@ -274,15 +322,28 @@ export default function AdminOrders() {
                       {new Date(order.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedOrder(order);
-                        }}
-                        className="p-2 text-gray-400 hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
-                      >
-                        <Eye size={18} />
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrder(order);
+                          }}
+                          className="p-2 text-gray-400 hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
+                          title="View details"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteModal(order);
+                          }}
+                          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/10 rounded-lg transition-colors"
+                          title="Delete order"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -301,6 +362,18 @@ export default function AdminOrders() {
           onProjectCreated={fetchOrders}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDeleteOrder}
+        title="Delete Order"
+        message={`Are you sure you want to delete this order (${deleteModal.orderInfo})? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   );
 }
