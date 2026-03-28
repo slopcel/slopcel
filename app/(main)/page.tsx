@@ -3,12 +3,10 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Plus, ArrowRight, User, Calendar, Clock } from 'lucide-react';
+import { Plus, ArrowRight, User } from 'lucide-react';
 import Footer from '@/components/Footer';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from 'sonner';
 import ProjectDetailModal from '@/components/ProjectDetailModal';
-import { PlausibleEvents } from '@/lib/plausible';
 
 interface ProjectProfile {
   display_name: string | null;
@@ -30,17 +28,6 @@ interface FeaturedProject {
   profile?: ProjectProfile | null;
 }
 
-interface FeaturedBlogPost {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string | null;
-  thumbnail_url: string | null;
-  published_at: string | null;
-  created_at: string;
-  content: string;
-}
-
 export default function Home() {
   useEffect(() => {
     // Easter egg console log
@@ -50,24 +37,11 @@ export default function Home() {
 
   
   const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
   const [featuredProjects, setFeaturedProjects] = useState<FeaturedProject[]>([]);
-  const [featuredBlogPosts, setFeaturedBlogPosts] = useState<FeaturedBlogPost[]>([]);
   const [selectedProject, setSelectedProject] = useState<FeaturedProject | null>(null);
-  const [availability, setAvailability] = useState<{
-    premium: boolean | null;
-    standard: boolean | null;
-    hallOfFame: boolean | null;
-  }>({
-    premium: null,
-    standard: null,
-    hallOfFame: null,
-  });
 
   useEffect(() => {
-    checkAvailability();
     fetchFeaturedProjects();
-    fetchFeaturedBlogPosts();
   }, []);
 
   const fetchFeaturedProjects = async () => {
@@ -116,139 +90,7 @@ export default function Home() {
         profile: project.user_id ? profilesMap[project.user_id] || null : null,
       }));
 
-      console.log(projects)
-
       setFeaturedProjects(projectsWithProfiles);
-    }
-  };
-
-  const fetchFeaturedBlogPosts = async () => {
-    const supabase = createClient();
-    
-    // Fetch featured and published blog posts (limit to 3 for homepage)
-    const { data: posts, error } = await supabase
-      .from('blog_posts')
-      .select('id, title, slug, excerpt, thumbnail_url, published_at, created_at, content')
-      .eq('published', true)
-      .eq('featured', true)
-      .order('published_at', { ascending: false })
-      .limit(3);
-
-    if (error) {
-      console.error('Error fetching blog posts:', error);
-      return;
-    }
-
-    if (posts) {
-      setFeaturedBlogPosts(posts);
-    }
-  };
-
-  const estimateReadingTime = (content: string): number => {
-    const wordsPerMinute = 200;
-    const wordCount = content.split(/\s+/).length;
-    return Math.ceil(wordCount / wordsPerMinute);
-  };
-
-  const checkAvailability = async () => {
-    const supabase = createClient();
-    
-    // Check each tier
-    const [premium, standard, hallOfFame] = await Promise.all([
-      supabase.rpc('check_tier_availability', { amount_cents: 30000 }),
-      supabase.rpc('check_tier_availability', { amount_cents: 15000 }),
-      supabase.rpc('check_tier_availability', { amount_cents: 7500 }),
-    ]);
-
-    setAvailability({
-      premium: premium.data ?? null,
-      standard: standard.data ?? null,
-      hallOfFame: hallOfFame.data ?? null,
-    });
-  };
-
-  const handleSubmitIdea = async () => {
-    // Redirect to pricing section
-    window.location.href = '#pricing';
-  };
-
-  const handleCheckout = async (tier: 'bare_minimum' | 'premium' | 'standard' | 'hall_of_fame') => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/dodo/create-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tier }),
-      });
-
-      // Read body as text first, then parse as JSON
-      const text = await response.text();
-      let data: any = null;
-      
-      try {
-        data = JSON.parse(text);
-      } catch (jsonErr) {
-        console.error('Non-JSON response from create-checkout:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: text.substring(0, 500), // First 500 chars
-        });
-        // Show more helpful error based on status
-        if (response.status === 500) {
-          toast.error('Server error. Check console for details.', {
-            description: text.substring(0, 100),
-            duration: 10000,
-          });
-        } else if (response.status === 404) {
-          toast.error('Payment endpoint not found. Please contact support.');
-        } else {
-          toast.error(`Payment service error (${response.status})`, {
-            description: text.substring(0, 100),
-            duration: 10000,
-          });
-        }
-        setLoading(false);
-        return;
-      }
-
-      if (data.checkoutUrl) {
-        // Track checkout started
-        PlausibleEvents.checkoutStarted(tier);
-        window.location.href = data.checkoutUrl;
-      } else if (data.error) {
-        // Log detailed error info for debugging
-        console.error('Checkout error:', {
-          code: data.code,
-          error: data.error,
-          details: data.details,
-          tier: data.tier,
-        });
-        
-        // Show user-friendly error message
-        toast.error(data.error, {
-          duration: 5000,
-          description: data.code === 'TIER_SOLD_OUT' 
-            ? 'Check other tiers for availability.' 
-            : data.code === 'RATE_LIMITED'
-            ? 'Please wait a moment before trying again.'
-            : undefined,
-        });
-        setLoading(false);
-        
-        // Refresh availability if tier sold out
-        if (data.code === 'TIER_SOLD_OUT') {
-          checkAvailability();
-        }
-      } else {
-        toast.error('Failed to create checkout. Please try again.');
-        setLoading(false);
-      }
-    } catch (error: any) {
-      console.error('Error creating checkout:', error);
-      toast.error(error?.message || 'Connection error. Please check your internet and try again.');
-      setLoading(false);
     }
   };
 
@@ -271,13 +113,8 @@ export default function Home() {
             Slopcel is the world's worst hosting platform. Built by AI, for AI — and possibly for you.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
-            <button 
-              onClick={handleSubmitIdea}
-              className="btn-primary hover-shake"
-            >
-              Submit an Idea
-            </button>
-            <Link href="/projects" className="btn-inverse">View the Slop</Link>
+            <Link href="/projects" className="btn-primary hover-shake">View the Slop</Link>
+            <Link href="/hall-of-fame" className="btn-inverse">Hall of Fame</Link>
           </div>
           
         </div>
@@ -310,14 +147,25 @@ export default function Home() {
                   I hate AI vibecoded slop and I hate Vercel. However I cannot deny how powerful vibecoding is, so I decided to kill 2 birds with one stone by building my own hosting platform.             
               </p>
               <p className="text-gray-300 leading-relaxed mb-6">
-                Despite the hilarious name and the unserious presentation of this website, I do want to try my hand at vibecoding, and for that I need your help.
-                Unlike Vercel, where anyone can deploy their project, this website is solely dedicated to my vibecoded slop. But you can submit your own ideas and they will be deployed by me. Here is how it works:
+                Despite the hilarious name and the unserious presentation of this website, I do want to try my hand at vibecoding. This site now serves as an archive of the projects I've built.
               </p>
-              <ol className="list-decimal pl-6 space-y-3 text-gray-200 mb-8">
-                <li><span className="font-semibold">Submit an idea</span>—by either paying a fee or by reaching out to me on my Twitter posts</li>
-                <li><span className="font-semibold">I will build and deploy it</span>—if I like the idea or if there is enough popular demand</li>
-                <li><span className="font-semibold">For those who pay premium</span>—your project will be immediately accepted and appear on the hall of fame</li>
-              </ol>
+
+              {/* Migration Notice */}
+              <div className="bg-[#1a1a1a] border border-[#d4a017]/50 rounded-xl p-6 mb-8">
+                <h3 className="text-xl font-bold text-[#d4a017] mb-3">Slopcel is Moving!</h3>
+                <p className="text-gray-300 leading-relaxed mb-4">
+                  Slopcel has evolved and is now becoming <span className="font-bold text-white">cookd.fun</span> — a bigger, better platform for vibecoded projects. Head over there for the full experience, including new features, submissions, and more slop than ever before.
+                </p>
+                <Link 
+                  href="https://cookd.fun" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="btn-primary inline-flex items-center gap-2"
+                >
+                  Visit cookd.fun
+                  <ArrowRight size={18} />
+                </Link>
+              </div>
 
               <p className="text-gray-300">
                 <Link href="https://x.com/_madiou" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:opacity-90">
@@ -411,102 +259,16 @@ export default function Home() {
         </section>
       )}
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-4 text-white">
-            Pricing
-          </h2>
-          <p className="text-center text-gray-400 mb-12">
-            Choose your level of slop
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-[800px] mx-auto items-stretch">
-            {/* Bare Minimum - $50 */}
-            <div className="card-hover bg-[#0d0d0d] p-8 rounded-lg border border-gray-800 relative flex">
-              <div className="text-center flex flex-col w-full">
-                <h3 className="text-2xl font-bold mb-2">The Bare Minimum</h3>
-                <div className="text-4xl font-bold text-white mb-4">$50</div>
-                <p className="text-gray-400 mb-6">Host 1 slop app (no Hall of Fame)</p>
-                <ul className="text-left space-y-2 mb-8">
-                  <li>✓ 1 app deployment</li>
-                  <li>✓ Complete access to code and repo</li>
-                  <li>✓ Complimentary regret</li>
-                  <li>✗ Support (I'm busy)</li>
-                  <li>✗ Hall of Fame placement</li>
-                </ul>
-                <button 
-                  onClick={() => handleCheckout('bare_minimum')}
-                  disabled={loading}
-                  className="btn-secondary w-full mt-auto disabled:opacity-50"
-                >
-                  {loading ? 'Loading...' : 'Get Started'}
-                </button>
-              </div>
-            </div>
-            
-            {/* Hall of Famer Tier - $75 */}
-            <div className="card-hover bg-[#0d0d0d] p-8 rounded-lg border border-gray-800 relative flex">
-              <div className="text-center flex flex-col w-full">
-                <h3 className="text-2xl font-bold mb-2">Hall of Famer</h3>
-                <div className="text-4xl font-bold text-white mb-4">$75</div>
-                <p className="text-gray-400 mb-6">Hall of Fame positions 12-100</p>
-                <ul className="text-left space-y-2 mb-8">
-                  <li>✓ 1 app deployment</li>
-                  <li>✓ Hall of Fame (positions 12-100)</li>
-                  <li>✓ Slightly better design</li>
-                  <li>✓ Premium functionalities</li>
-                  <li>✓ Complete access to code and repo</li>
-                  <li>✓ Support (up to 3 revisions)</li>
-                </ul>
-                {availability.hallOfFame === false && (
-                  <p className="text-red-400 text-sm mb-4">All spots taken</p>
-                )}
-                {availability.hallOfFame === true && (
-                  <p className="text-[#d4a017] text-sm mb-4">Positions 12-100 available</p>
-                )}
-                <button 
-                  onClick={() => handleCheckout('hall_of_fame')}
-                  disabled={loading || availability.hallOfFame === false}
-                  className="btn-primary w-full mt-auto disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Loading...' : availability.hallOfFame === false ? 'Sold Out' : 'Get Your Spot'}
-                </button>
-              </div>
-            </div>
-            
-            {/* Enterprise Tier */}
-            {/* <div className="card-hover bg-[#0d0d0d] p-8 rounded-lg border border-gray-800 relative">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold mb-2">Custom Needs</h3>
-                <div className="text-4xl font-bold gradient-text mb-4">$$$</div>
-                <p className="text-gray-400 mb-6">For more serious enquiries</p>
-                <ul className="text-left space-y-2 mb-8">
-                  <li>✓ Real apps</li>
-                  <li>✓ Bring your idea to life</li>
-                  <li>✓ Actual human effort and supervision</li>
-                  <li>✓ Maximum chaos</li>
-                  <li>✓ VIP</li>
-                </ul>
-                <button className="btn-secondary w-full">Contact AI</button>
-              </div>
-            </div> */}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials removed */}
-
-{/* FAQ Section */}
-<section className="py-20 px-6">
+      {/* FAQ Section */}
+      <section className="py-20 px-6">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-4xl font-bold text-center mb-4 text-white">FAQ</h2>
           <p className="text-center text-gray-400 mb-10">Answers to common questions</p>
 
           {[
-            { q: 'What is Slopcel?', a: 'A parody hosting platform for vibecoded slop—projects are built and deployed manually by me.' },
-            { q: 'Can I submit an idea?', a: 'Yes. Pay a fee or rally interest on Twitter; if I like it, I will build and deploy.' },
-            { q: 'Will my app be online forever?', a: 'Yes. Especially if you pay for the Hall of Fame.' },
+            { q: 'What is Slopcel?', a: 'A parody hosting platform for vibecoded slop—projects were built and deployed manually by me.' },
+            { q: 'Where is Slopcel going?', a: 'Slopcel has evolved into cookd.fun — a bigger, better platform for vibecoded projects. This site remains as an archive.' },
+            { q: 'Will my app be online forever?', a: 'Yes. All existing projects will remain hosted and accessible.' },
           ].map((item, i) => {
             const isOpen = faqOpenIndex === i;
             return (
@@ -531,92 +293,6 @@ export default function Home() {
           })}
         </div>
       </section>
-
-      {/* Blog Section */}
-      {featuredBlogPosts.length > 0 && (
-        <section className="py-20 px-6">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex flex-col text-center sm:flex-row sm:items-end sm:justify-center gap-4 mb-10">
-              <div>
-                <h2 className="text-4xl font-bold text-white mb-2">From the Blog</h2>
-                <p className="text-gray-400">Latest updates, tutorials, and insights</p>
-              </div>
-              
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredBlogPosts.map((post) => (
-                <Link
-                  key={post.id}
-                  href={`/blog/${post.slug}`}
-                  className="group bg-[#0d0d0d] border border-gray-800 rounded-xl overflow-hidden hover:border-[#d4a017]/50 transition-all duration-300 hover:-translate-y-1"
-                >
-                  {/* Thumbnail */}
-                  <div className="relative h-40 overflow-hidden">
-                    {post.thumbnail_url ? (
-                      <img
-                        src={post.thumbnail_url}
-                        alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-[#d4a017]/20 to-[#d4a017]/5 flex items-center justify-center">
-                        <span className="text-4xl opacity-50">📝</span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-5">
-                    {/* Meta */}
-                    <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} />
-                        {new Date(post.published_at || post.created_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={12} />
-                        {estimateReadingTime(post.content)} min
-                      </span>
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="font-bold text-white mb-2 group-hover:text-[#d4a017] transition-colors line-clamp-2">
-                      {post.title}
-                    </h3>
-
-                    {/* Excerpt */}
-                    {post.excerpt && (
-                      <p className="text-gray-400 text-sm line-clamp-2 mb-3">
-                        {post.excerpt}
-                      </p>
-                    )}
-
-                    {/* Read More */}
-                    <span className="text-[#d4a017] text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-                      Read more
-                      <ArrowRight size={14} />
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-            <div className="text-center flex justify-center mt-10">
-              <Link
-                  href="/blog"
-                  className="text-white hover:text-[#e5b030] flex items-center gap-2 font-medium group"
-                >
-                  View all posts
-                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Project Detail Modal */}
       <ProjectDetailModal

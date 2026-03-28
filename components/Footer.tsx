@@ -5,11 +5,11 @@ export default function Footer(){
     return(
         <footer className="py-20 px-6 border-t border-gray-800 bg-black">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between gap-10 md:gap-16">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10">
             <div>
               <div className="text-2xl font-bold text-white mb-3">Slopcel</div>
               <p className="text-gray-400 text-sm max-w-md mb-6">
-                Vercel for Vibecoded Projects
+                Vercel for Vibecoded Projects — Now moving to <Link href="https://cookd.fun" target="_blank" rel="noopener noreferrer" className="text-[#d4a017] hover:underline">cookd.fun</Link>
               </p>
               <div className="flex items-center gap-4">
                 <Link href={links["twitter"]} className="p-2 rounded-md border border-gray-800 hover:bg-[#111]" target="_blank">
@@ -21,31 +21,10 @@ export default function Footer(){
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
-              <div>
-                <div className="text-gray-200 font-semibold mb-3">Overview</div>
-                <ul className="space-y-2 text-gray-400">
-                  <li><Link href="/projects" className="hover:text-white">Projects</Link></li>
-                  <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
-                  {/* <li><Link href="#" className="hover:text-white">Changelog</Link></li> */}
-                </ul>
-              </div>
-              <div>
-                <div className="text-gray-200 font-semibold mb-3">Info</div>
-                <ul className="space-y-2 text-gray-400">
-                  <li><Link href="#about" className="hover:text-white">About</Link></li>
-                  <li><Link href={links["twitter"]} className="hover:text-white">Contact</Link></li>
-                  <li><Link href="/hall-of-fame" className="hover:text-white">Hall of Fame</Link></li>
-                </ul>
-              </div>
-              <div>
-              <div className="text-gray-200 font-semibold mb-3">Legal</div>
-                <ul className="space-y-2 text-gray-400">
-                  <li><Link href="/privacy" className="hover:text-white">Privacy</Link></li>
-                  <li><Link href="/terms" className="hover:text-white">Terms</Link></li>
-                  <li><Link href="/refund" className="hover:text-white">Refund Policy</Link></li>
-                </ul>
-              </div>
+            <div className="flex flex-col sm:flex-row gap-6 text-sm text-gray-400">
+              <Link href="/projects" className="hover:text-white">Projects</Link>
+              <Link href="/hall-of-fame" className="hover:text-white">Hall of Fame</Link>
+              <Link href="https://cookd.fun" target="_blank" rel="noopener noreferrer" className="hover:text-[#d4a017]">cookd.fun →</Link>
             </div>
           </div>
 

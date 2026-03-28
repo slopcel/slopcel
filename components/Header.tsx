@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { Menu, X, LayoutDashboard } from 'lucide-react';
+import { Menu, X, LayoutDashboard, FolderOpen, Trophy } from 'lucide-react';
 import { links } from '@/constants';
 import { createClient } from '@/lib/supabase/client';
 
@@ -92,11 +92,11 @@ export default function Header() {
                   <LayoutDashboard size={20} />
                 </Link>
               )}
-              <Link href="/#pricing" aria-label="Pricing" className="nav-link text-gray-300">
-                <img src="/icons/price.svg" alt="" height={20} width={20}/>
+              <Link href="/projects" aria-label="Projects" className="nav-link text-gray-300">
+                <FolderOpen size={20} />
               </Link>
               <Link href="/hall-of-fame" aria-label="Hall of Fame" className="nav-link text-gray-300">
-                <img src="/icons/trophy.svg" alt="" height={20} width={20}/>
+                <Trophy size={20} />
               </Link>
               <Link href={links['discord']} target="_blank" rel="noopener noreferrer" aria-label="Discord" className="nav-link text-gray-300">
                 <img src="/icons/discord.svg" alt="" height={20} width={20}/>
@@ -110,7 +110,7 @@ export default function Header() {
               {isLoggedIn && (
                 <Link href={isAdmin ? '/admin' : '/dashboard'} className="nav-link text-gray-300">Dashboard</Link>
               )}
-              <Link href="/#pricing" className="nav-link text-gray-300">Pricing</Link>
+              <Link href="/projects" className="nav-link text-gray-300">Projects</Link>
               <Link href="/hall-of-fame" className="nav-link text-gray-300">Hall of Fame</Link>
               <Link href="https://discord.com/" target="_blank" rel="noopener noreferrer" className="nav-link text-gray-300">Discord</Link>
               <Link href="https://x.com/_madiou" target="_blank" rel="noopener noreferrer" className="nav-link text-gray-300">Twitter</Link>
@@ -137,12 +137,12 @@ export default function Header() {
                 <span>Dashboard</span>
               </Link>
             )}
-            <Link href="/#pricing" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
-              <img src="/icons/price.svg" alt="" height={20} width={20}/>
-              <span>Pricing</span>
+            <Link href="/projects" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
+              <FolderOpen size={18} className="text-gray-300" />
+              <span>Projects</span>
             </Link>
             <Link href="/hall-of-fame" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">
-              <img src="/icons/trophy.svg" alt="" height={20} width={20}/>
+              <Trophy size={18} className="text-gray-300" />
               <span>Hall of Fame</span>
             </Link>
             <Link href="https://discord.com/" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5">

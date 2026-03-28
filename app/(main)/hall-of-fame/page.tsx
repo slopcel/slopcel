@@ -4,10 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import Link from 'next/link';
-import PricingModal from '@/components/PricingModal';
-import { User } from 'lucide-react';
-import { toast } from 'sonner';
-import { PlausibleEvents } from '@/lib/plausible';
+import { User, ArrowRight } from 'lucide-react';
 
 interface UserProfile {
   display_name: string | null;
@@ -29,186 +26,14 @@ interface HallOfFameProject {
   profile: UserProfile | null;
 }
 
-// TEMPORARY: Mock data for visualization - Remove this after testing
-const SHOW_MOCK_DATA = false;
-const mockProjects: HallOfFameProject[] = [
-  // Position 1 - Premium ($300)
-  { id: '1', name: 'SlopTracker Pro', description: 'The ultimate project tracking tool for indie hackers. Built with Next.js and powered by AI. Ship faster, track smarter.', image_url: 'https://picsum.photos/seed/sloptrack/800/400', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 1, amount: 30000, user_id: '1', profile: { display_name: 'Alex Builder', avatar_url: 'https://i.pravatar.cc/150?u=alex', twitter_url: 'https://x.com/alexbuilder', is_anonymous: false } },
-  // Positions 2-10 - Standard ($150)
-  { id: '2', name: 'VibeCheck AI', description: 'Sentiment analysis for your codebase. Know when your code is happy.', image_url: 'https://picsum.photos/seed/vibecheck/400/300', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 2, amount: 15000, user_id: '2', profile: { display_name: 'Sarah Dev', avatar_url: 'https://i.pravatar.cc/150?u=sarah', twitter_url: 'https://twitter.com/sarahdev', is_anonymous: false } },
-  { id: '3', name: 'DeployDemon', description: 'One-click deployments that actually work. No more YAML nightmares.', image_url: 'https://picsum.photos/seed/deploydemon/400/300', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 3, amount: 15000, user_id: '3', profile: null },
-  { id: '4', name: 'CopyCraft', description: 'AI copywriting that doesn\'t sound like a robot wrote it.', image_url: 'https://picsum.photos/seed/copycraft/400/300', live_url: null, github_url: 'https://github.com', hall_of_fame_position: 4, amount: 15000, user_id: '4', profile: { display_name: null, avatar_url: null, twitter_url: null, is_anonymous: true } },
-  { id: '5', name: 'BugSquasher', description: 'Find bugs before your users do. Automated testing made simple.', image_url: 'https://picsum.photos/seed/bugsquash/400/300', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 5, amount: 15000, user_id: '5', profile: { display_name: 'Mike Coder', avatar_url: 'https://i.pravatar.cc/150?u=mike', twitter_url: null, is_anonymous: false } },
-  { id: '6', name: 'LaunchPad X', description: 'Landing pages in minutes. No code required, all vibes included.', image_url: 'https://picsum.photos/seed/launchpadx/400/300', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 6, amount: 15000, user_id: '6', profile: { display_name: 'Lisa Maker', avatar_url: null, twitter_url: 'https://x.com/lisamaker', is_anonymous: false } },
-  { id: '7', name: 'MetricsMaster', description: 'Analytics without the complexity. Know your numbers instantly.', image_url: 'https://picsum.photos/seed/metrics/400/300', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 7, amount: 15000, user_id: null, profile: null },
-  { id: '8', name: 'CodeReviewBot', description: 'AI code reviews that actually help. Better than your coworker.', image_url: 'https://picsum.photos/seed/codereview/400/300', live_url: null, github_url: 'https://github.com', hall_of_fame_position: 8, amount: 15000, user_id: '8', profile: { display_name: 'John Reviewer', avatar_url: 'https://i.pravatar.cc/150?u=john', twitter_url: null, is_anonymous: false } },
-  { id: '9', name: 'TaskFlow', description: 'Project management for people who hate project management.', image_url: 'https://picsum.photos/seed/taskflow/400/300', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 9, amount: 15000, user_id: '9', profile: { display_name: null, avatar_url: null, twitter_url: null, is_anonymous: false } },
-  { id: '10', name: 'APIForge', description: 'Build and mock APIs in seconds. Your backend\'s best friend.', image_url: 'https://picsum.photos/seed/apiforge/400/300', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 10, amount: 15000, user_id: '10', profile: { display_name: 'API King', avatar_url: 'https://i.pravatar.cc/150?u=apiking', twitter_url: 'https://x.com/apiking', is_anonymous: false } },
-  // Positions 11-100 - Hall of Fame ($75)
-  { id: '11', name: 'QuickDB', description: null, image_url: 'https://picsum.photos/seed/quickdb/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 11, amount: 7500, user_id: null, profile: null },
-  { id: '12', name: 'FormBuilder', description: null, image_url: 'https://picsum.photos/seed/formbuilder/200/150', live_url: null, github_url: 'https://github.com', hall_of_fame_position: 12, amount: 7500, user_id: '12', profile: { display_name: 'Form Master', avatar_url: null, twitter_url: null, is_anonymous: false } },
-  { id: '13', name: 'NotifyMe', description: null, image_url: 'https://picsum.photos/seed/notifyme/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 13, amount: 7500, user_id: null, profile: null },
-  { id: '14', name: 'CacheKing', description: null, image_url: 'https://picsum.photos/seed/cacheking/200/150', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 14, amount: 7500, user_id: null, profile: null },
-  { id: '15', name: 'LogStream', description: null, image_url: 'https://picsum.photos/seed/logstream/200/150', live_url: null, github_url: 'https://github.com', hall_of_fame_position: 15, amount: 7500, user_id: null, profile: null },
-  { id: '16', name: 'AuthBox', description: null, image_url: 'https://picsum.photos/seed/authbox/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 16, amount: 7500, user_id: null, profile: null },
-  { id: '17', name: 'DataPipe', description: null, image_url: 'https://picsum.photos/seed/datapipe/200/150', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 17, amount: 7500, user_id: null, profile: null },
-  { id: '18', name: 'ChartGen', description: null, image_url: 'https://picsum.photos/seed/chartgen/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 18, amount: 7500, user_id: null, profile: null },
-  { id: '19', name: 'PixelPerfect', description: null, image_url: 'https://picsum.photos/seed/pixelperfect/200/150', live_url: null, github_url: 'https://github.com', hall_of_fame_position: 19, amount: 7500, user_id: null, profile: null },
-  { id: '20', name: 'TestRunner', description: null, image_url: 'https://picsum.photos/seed/testrunner/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 20, amount: 7500, user_id: null, profile: null },
-  { id: '21', name: 'MailJet', description: null, image_url: 'https://picsum.photos/seed/mailjet/200/150', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 21, amount: 7500, user_id: null, profile: null },
-  { id: '22', name: 'DocuGen', description: null, image_url: 'https://picsum.photos/seed/docugen/200/150', live_url: null, github_url: 'https://github.com', hall_of_fame_position: 22, amount: 7500, user_id: null, profile: null },
-  { id: '23', name: 'QueueMaster', description: null, image_url: 'https://picsum.photos/seed/queuemaster/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 23, amount: 7500, user_id: null, profile: null },
-  { id: '24', name: 'CloudSync', description: null, image_url: 'https://picsum.photos/seed/cloudsync/200/150', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 24, amount: 7500, user_id: null, profile: null },
-  { id: '25', name: 'CodeSnip', description: null, image_url: 'https://picsum.photos/seed/codesnip/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 25, amount: 7500, user_id: null, profile: null },
-  { id: '26', name: 'HashGen', description: null, image_url: 'https://picsum.photos/seed/hashgen/200/150', live_url: null, github_url: 'https://github.com', hall_of_fame_position: 26, amount: 7500, user_id: null, profile: null },
-  { id: '27', name: 'ScriptHub', description: null, image_url: 'https://picsum.photos/seed/scripthub/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 27, amount: 7500, user_id: null, profile: null },
-  { id: '28', name: 'TerminalX', description: null, image_url: 'https://picsum.photos/seed/terminalx/200/150', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 28, amount: 7500, user_id: null, profile: null },
-  { id: '29', name: 'ConfigMan', description: null, image_url: 'https://picsum.photos/seed/configman/200/150', live_url: null, github_url: 'https://github.com', hall_of_fame_position: 29, amount: 7500, user_id: null, profile: null },
-  { id: '30', name: 'BackupBuddy', description: null, image_url: 'https://picsum.photos/seed/backupbuddy/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 30, amount: 7500, user_id: null, profile: null },
-  { id: '35', name: 'CronJob', description: null, image_url: 'https://picsum.photos/seed/cronjob/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 35, amount: 7500, user_id: null, profile: null },
-  { id: '42', name: 'ImageOpt', description: null, image_url: 'https://picsum.photos/seed/imageopt/200/150', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 42, amount: 7500, user_id: null, profile: null },
-  { id: '55', name: 'SecureVault', description: null, image_url: 'https://picsum.photos/seed/securevault/200/150', live_url: null, github_url: 'https://github.com', hall_of_fame_position: 55, amount: 7500, user_id: null, profile: null },
-  { id: '67', name: 'QueryBuilder', description: null, image_url: 'https://picsum.photos/seed/querybuilder/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 67, amount: 7500, user_id: null, profile: null },
-  { id: '78', name: 'StatusPage', description: null, image_url: 'https://picsum.photos/seed/statuspage/200/150', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 78, amount: 7500, user_id: null, profile: null },
-  { id: '89', name: 'WebHooker', description: null, image_url: 'https://picsum.photos/seed/webhooker/200/150', live_url: null, github_url: 'https://github.com', hall_of_fame_position: 89, amount: 7500, user_id: null, profile: null },
-  { id: '95', name: 'FeatureFlag', description: null, image_url: 'https://picsum.photos/seed/featureflag/200/150', live_url: 'https://example.com', github_url: null, hall_of_fame_position: 95, amount: 7500, user_id: null, profile: null },
-  { id: '100', name: 'SloppyBot', description: null, image_url: 'https://picsum.photos/seed/sloppybot/200/150', live_url: 'https://example.com', github_url: 'https://github.com', hall_of_fame_position: 100, amount: 7500, user_id: null, profile: null },
-];
-
 export default function HallOfFame() {
   const [hofProjects, setHofProjects] = useState<HallOfFameProject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<'premium' | 'standard' | 'hall_of_fame' | 'bare_minimum'>('hall_of_fame');
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [availability, setAvailability] = useState<{
-    premium: boolean | null;
-    standard: boolean | null;
-    hallOfFame: boolean | null;
-  }>({
-    premium: null,
-    standard: null,
-    hallOfFame: null,
-  });
   const supabase = createClient();
 
   useEffect(() => {
-    // TEMPORARY: Use mock data for visualization
-    if (SHOW_MOCK_DATA) {
-      setHofProjects(mockProjects);
-      setLoading(false);
-    } else {
-      fetchHallOfFameProjects();
-    }
-    checkAvailability();
+    fetchHallOfFameProjects();
   }, []);
-
-  const checkAvailability = async () => {
-    const [premium, standard, hallOfFame] = await Promise.all([
-      supabase.rpc('check_tier_availability', { amount_cents: 30000 }),
-      supabase.rpc('check_tier_availability', { amount_cents: 15000 }),
-      supabase.rpc('check_tier_availability', { amount_cents: 7500 }),
-    ]);
-
-    setAvailability({
-      premium: premium.data ?? null,
-      standard: standard.data ?? null,
-      hallOfFame: hallOfFame.data ?? null,
-    });
-  };
-
-  const handleCardClick = (position: number) => {
-    let tier: 'premium' | 'standard' | 'hall_of_fame' | 'bare_minimum' = 'hall_of_fame';
-    if (position === 1) {
-      tier = 'premium';
-    } else if (position >= 2 && position <= 11) {
-      tier = 'standard';
-    } else {
-      tier = 'hall_of_fame';
-    }
-    setSelectedTier(tier);
-    setModalOpen(true);
-  };
-
-  const handleCheckout = async (tier: 'premium' | 'standard' | 'hall_of_fame' | 'bare_minimum') => {
-    setCheckoutLoading(true);
-    try {
-      const response = await fetch('/api/dodo/create-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tier }),
-      });
-
-      // Read body as text first, then parse as JSON
-      const text = await response.text();
-      let data: any = null;
-      
-      try {
-        data = JSON.parse(text);
-      } catch (jsonErr) {
-        console.error('Non-JSON response from create-checkout:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: text.substring(0, 500), // First 500 chars
-        });
-        // Show more helpful error based on status
-        if (response.status === 500) {
-          toast.error('Server error. Check console for details.', {
-            description: text.substring(0, 100),
-            duration: 10000,
-          });
-        } else if (response.status === 404) {
-          toast.error('Payment endpoint not found. Please contact support.');
-        } else {
-          toast.error(`Payment service error (${response.status})`, {
-            description: text.substring(0, 100),
-            duration: 10000,
-          });
-        }
-        setCheckoutLoading(false);
-        return;
-      }
-
-      if (data.checkoutUrl) {
-        // Track checkout started
-        PlausibleEvents.checkoutStarted(tier);
-        window.location.href = data.checkoutUrl;
-      } else if (data.error) {
-        // Log detailed error info for debugging
-        console.error('Checkout error:', {
-          code: data.code,
-          error: data.error,
-          details: data.details,
-          tier: data.tier,
-        });
-        
-        // Show user-friendly error message
-        toast.error(data.error, {
-          duration: 5000,
-          description: data.code === 'TIER_SOLD_OUT' 
-            ? 'Check other tiers for availability.' 
-            : data.code === 'RATE_LIMITED'
-            ? 'Please wait a moment before trying again.'
-            : undefined,
-        });
-        setCheckoutLoading(false);
-        
-        // Refresh availability if tier sold out
-        if (data.code === 'TIER_SOLD_OUT') {
-          checkAvailability();
-        }
-      } else {
-        toast.error('Failed to create checkout. Please try again.');
-        setCheckoutLoading(false);
-      }
-    } catch (error: any) {
-      console.error('Error creating checkout:', error);
-      toast.error(error?.message || 'Connection error. Please check your internet and try again.');
-      setCheckoutLoading(false);
-    }
-  };
 
   const fetchHallOfFameProjects = async () => {
     setLoading(true);
@@ -288,13 +113,6 @@ export default function HallOfFame() {
   // Create a map of positions to projects for easy lookup
   const positionMap = new Map(hofProjects.map(p => [p.hall_of_fame_position, p]));
 
-  // Helper to get price label for position
-  const getPriceLabel = (position: number) => {
-    if (position === 1) return '$300';
-    if (position >= 2 && position <= 11) return '$150';
-    return '$75';
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-[#f8f8f8]">
@@ -316,7 +134,7 @@ export default function HallOfFame() {
           </h1>
           <p className="text-gray-400">
             {hofProjects.length === 0
-              ? 'Placeholder wall for upcoming featured apps.'
+              ? 'An archive of the Hall of Fame from when Slopcel was accepting submissions.'
               : 'The finest projects hosted on Slopcel, ranked by their hall of fame position.'}
           </p>
         </div>
@@ -324,40 +142,20 @@ export default function HallOfFame() {
 
       {hofProjects.length === 0 ? (
         <section className="py-8 px-6">
-          <div className="max-w-6xl mx-auto space-y-10">
-            {/* Placeholder Wall */}
-            <div className="flex justify-center">
-              <div className="cursor-pointer" onClick={() => handleCardClick(1)}>
-                <div className="relative w-full min-w-[260px] md:w-[820px] h-[220px] rounded-xl border-4 border-dashed border-yellow-400 grid place-items-center hover:border-yellow-300 transition-colors">
-                  <div className="text-5xl font-extrabold text-yellow-400">$300</div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-2 text-center text-3xl font-bold text-yellow-400">1</div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-              {Array.from({ length: 9 }).map((_, i) => {
-                const num = i + 2;
-                return (
-                  <div key={i} className="flex flex-col items-center">
-                      <div className="w-full cursor-pointer rounded-lg border-2 border-dashed border-white/70 h-40 grid place-items-center hover:border-white/90 transition-colors" onClick={() => handleCardClick(num)}>
-                        <div className="text-3xl font-bold text-white">$150</div>
-                      </div>
-                    <div className="mt-2 text-lg font-bold text-white">{num}</div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-9 gap-4">
-              {Array.from({ length: 90 }).map((_, i) => (
-                <div key={i} className="flex flex-col items-center">
-                    <div className="w-full cursor-pointer h-24 rounded-md border border-dashed border-gray-700 grid place-items-center hover:border-gray-600 transition-colors" onClick={() => handleCardClick(i + 12)}>
-                      <div className="text-xl text-gray-300">$75</div>
-                  </div>
-                  <div className="mt-2 text-xs text-gray-500">{i + 11}</div>
-                </div>
-              ))}
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="bg-[#0d0d0d] border border-gray-800 rounded-xl p-10">
+              <p className="text-gray-400 text-lg mb-6">
+                No projects in the Hall of Fame yet. This archive is from when Slopcel was accepting submissions.
+              </p>
+              <Link 
+                href="https://cookd.fun" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                Check out cookd.fun
+                <ArrowRight size={18} />
+              </Link>
             </div>
           </div>
         </section>
@@ -365,96 +163,57 @@ export default function HallOfFame() {
         <section className="py-8 px-6">
           <div className="max-w-6xl mx-auto space-y-10">
             {/* Position 1 - Premium */}
-            <div className="flex flex-col items-center">
-              {positionMap.get(1) ? (
-                <div className="w-full md:w-[820px] cursor-pointer">
+            {positionMap.get(1) && (
+              <div className="flex flex-col items-center">
+                <div className="w-full md:w-[820px]">
                   <ProjectCard project={positionMap.get(1)!} isPremium />
                   <div className="mb-2 text-center">
                     <span className="text-3xl mt-2 text-center font-bold text-yellow-400">1</span>
                   </div>
                 </div>
-              ) : (
-                <div className="cursor-pointer" onClick={() => handleCardClick(1)}>
-                  <div className="relative w-full min-w-[260px] md:w-[820px] h-[220px] rounded-xl border-4 border-dashed border-yellow-400 grid place-items-center hover:border-yellow-300 transition-colors">
-                    <div className="text-5xl font-extrabold text-yellow-400">$300</div>
-                  </div>
-                  <div className="mt-2 text-center text-3xl font-bold text-yellow-400">1</div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Positions 2-10 - Standard */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-              {Array.from({ length: 9 }, (_, i) => {
-                const position = i + 2;
-                const project = positionMap.get(position);
-                return (
-                  <div key={position} className="flex flex-col items-center">
-                    {project ? (
-                      <div className="w-full cursor-pointer">
+            {hofProjects.some(p => p.hall_of_fame_position >= 2 && p.hall_of_fame_position <= 10) && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                {hofProjects
+                  .filter(p => p.hall_of_fame_position >= 2 && p.hall_of_fame_position <= 10)
+                  .sort((a, b) => a.hall_of_fame_position - b.hall_of_fame_position)
+                  .map((project) => (
+                    <div key={project.id} className="flex flex-col items-center">
+                      <div className="w-full">
                         <ProjectCard project={project} />
                         <div className="w-full mt-2 text-center">
-                          <span className="text-lg font-bold text-white">{position}</span>
+                          <span className="text-lg font-bold text-white">{project.hall_of_fame_position}</span>
                         </div>
                       </div>
-                    ) : (
-                      <div className="w-full cursor-pointer" onClick={() => handleCardClick(position)}>
-                        <div className="w-full rounded-lg border-2 border-dashed border-white-400/50 h-[280px] grid place-items-center hover:border-yellow-400/70 transition-colors">
-                          <div className="text-3xl font-bold text-white/80">$150</div>
-                        </div>
-                        <div className="mt-2 text-center text-lg font-bold text-white">{position}</div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    </div>
+                  ))}
+              </div>
+            )}
 
-            {/* Positions 11-100 - Standard */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-9 gap-4">
-              {Array.from({ length: 90 }, (_, i) => {
-                const position = i + 11;
-                const project = positionMap.get(position);
-                return (
-                  <div key={position} className="flex flex-col items-center">
-                    {project ? (
-                      <div className="w-full cursor-pointer">
+            {/* Positions 11+ */}
+            {hofProjects.some(p => p.hall_of_fame_position >= 11) && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-9 gap-4">
+                {hofProjects
+                  .filter(p => p.hall_of_fame_position >= 11)
+                  .sort((a, b) => a.hall_of_fame_position - b.hall_of_fame_position)
+                  .map((project) => (
+                    <div key={project.id} className="flex flex-col items-center">
+                      <div className="w-full">
                         <ProjectCard project={project} isSmall />
                         <div className="w-full mb-1 mt-2 text-center">
-                          <span className="text-xs text-gray-500">{position}</span>
+                          <span className="text-xs text-gray-500">{project.hall_of_fame_position}</span>
                         </div>
                       </div>
-                    ) : (
-                        <div className='w-full cursor-pointer'>
-                          <div className="h-24 rounded-md border border-dashed border-gray-700 grid place-items-center hover:border-gray-600 transition-colors" onClick={() => handleCardClick(position)}>
-                            <div className="text-xl text-gray-300">$75</div>
-                          </div>
-                          <div className="mt-2 text-xs text-center text-gray-500">{position}</div>
-                        </div>
-                    )}
-                    
-                  </div>
-                );
-              })}
-            </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         </section>
       )}
-
-      <PricingModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        tier={selectedTier}
-        availability={
-          selectedTier === 'premium'
-            ? availability.premium
-            : selectedTier === 'standard'
-            ? availability.standard
-            : availability.hallOfFame
-        }
-        onCheckout={handleCheckout}
-        loading={checkoutLoading}
-      />
     </div>
   );
 }
