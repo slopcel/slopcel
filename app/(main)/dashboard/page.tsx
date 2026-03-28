@@ -4,9 +4,8 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Order, Profile } from '@/types/database';
 import { useRouter } from 'next/navigation';
-import { Package, CheckCircle, XCircle, Clock, Trophy, LogOut, Plus, Edit2, Save, X, Mail, AlertCircle, Lightbulb, User, Camera, EyeOff } from 'lucide-react';
+import { Package, CheckCircle, XCircle, Clock, Trophy, LogOut, Edit2, Save, X, Mail, AlertCircle, Lightbulb, User, EyeOff, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import AllPricingModal from '@/components/AllPricingModal';
 import Image from 'next/image';
 import { toast } from 'sonner';
 
@@ -21,7 +20,6 @@ export default function UserDashboard() {
   const [ideaDescriptions, setIdeaDescriptions] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [showAccountMessage, setShowAccountMessage] = useState(false);
-  const [showPricingModal, setShowPricingModal] = useState(false);
   const [linkedOrdersMessage, setLinkedOrdersMessage] = useState<string | null>(null);
   // Profile state
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -285,14 +283,16 @@ export default function UserDashboard() {
             <p className="text-gray-400 text-sm sm:text-base">Welcome, {userEmail}</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-            <button 
-              onClick={() => setShowPricingModal(true)}
+            <Link 
+              href="https://cookd.fun"
+              target="_blank"
+              rel="noopener noreferrer"
               className="btn-secondary flex items-center gap-2 text-sm sm:text-base px-3 sm:px-4 py-2"
             >
-              <Plus size={16} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="hidden sm:inline">Purchase More</span>
-              <span className="sm:hidden">Purchase</span>
-            </button>
+              <ExternalLink size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span className="hidden sm:inline">Visit cookd.fun</span>
+              <span className="sm:hidden">cookd.fun</span>
+            </Link>
             <button
               onClick={handleLogout}
               className="btn-secondary flex items-center gap-2 text-red-400 hover:bg-red-900/10 hover:text-red-300 text-sm sm:text-base px-3 sm:px-4 py-2"
@@ -585,12 +585,16 @@ export default function UserDashboard() {
             <div className="p-8 sm:p-12 text-center text-gray-400">
               <Package size={40} className="mx-auto mb-4 opacity-50 sm:w-12 sm:h-12" />
               <p className="mb-4 text-sm sm:text-base">No orders yet.</p>
-              <button 
-                onClick={() => setShowPricingModal(true)}
-                className="btn-primary inline-block text-sm sm:text-base"
+              <p className="mb-4 text-sm text-gray-500">Slopcel has moved to cookd.fun</p>
+              <Link 
+                href="https://cookd.fun"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary inline-flex items-center gap-2 text-sm sm:text-base"
               >
-                View Pricing
-              </button>
+                Visit cookd.fun
+                <ExternalLink size={16} />
+              </Link>
             </div>
           ) : (
             <div className="divide-y divide-gray-800">
@@ -768,10 +772,6 @@ export default function UserDashboard() {
         )}
       </div>
 
-      <AllPricingModal 
-        isOpen={showPricingModal}
-        onClose={() => setShowPricingModal(false)}
-      />
     </div>
   );
 }
